@@ -1,0 +1,10 @@
+命令
+sudo apt install 软件名
+sudo apt update 检查更新
+sudo apt upgrade 升级需要更新的软件
+sudo apt remove 软件名 
+
+apt和apt-get 去区别
+	apt-get:早期命令
+	apt:apt-get的增强版
+ 

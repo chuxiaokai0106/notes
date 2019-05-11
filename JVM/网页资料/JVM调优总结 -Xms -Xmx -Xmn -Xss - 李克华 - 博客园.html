@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-cn"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="origin">
+    <title>JVM调优总结 -Xms -Xmx -Xmn -Xss - 李克华 - 博客园</title>
+<meta property="og:description" content="堆大小设置JVM 中最大堆大小有三方面限制：相关操作系统的数据模型（32-bt还是64-bit）限制；系统的可用虚拟内存限制；系统的可用物理内存限制。32位系统下，一般限制在1.5G~2G；64为操作">
+    <link type="text/css" rel="stylesheet" href="JVM%E8%B0%83%E4%BC%98%E6%80%BB%E7%BB%93%20-Xms%20-Xmx%20-Xmn%20-Xss%20-%20%E6%9D%8E%E5%85%8B%E5%8D%8E%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.css">
+<link id="MainCss" type="text/css" rel="stylesheet" href="JVM%E8%B0%83%E4%BC%98%E6%80%BB%E7%BB%93%20-Xms%20-Xmx%20-Xmn%20-Xss%20-%20%E6%9D%8E%E5%85%8B%E5%8D%8E%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-summerGarden.css">
+<link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="JVM%E8%B0%83%E4%BC%98%E6%80%BB%E7%BB%93%20-Xms%20-Xmx%20-Xmn%20-Xss%20-%20%E6%9D%8E%E5%85%8B%E5%8D%8E%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-summerGarden-mobile.css">
+    <link title="RSS" type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/likehua/rss">
+    <link title="RSD" type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/likehua/rsd.xml">
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/likehua/wlwmanifest.xml">
+    <script src="JVM%E8%B0%83%E4%BC%98%E6%80%BB%E7%BB%93%20-Xms%20-Xmx%20-Xmn%20-Xss%20-%20%E6%9D%8E%E5%85%8B%E5%8D%8E%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/amp4ads-host-v0.js"></script><script src="JVM%E8%B0%83%E4%BC%98%E6%80%BB%E7%BB%93%20-Xms%20-Xmx%20-Xmn%20-Xss%20-%20%E6%9D%8E%E5%85%8B%E5%8D%8E%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_rendering_2019043001.js"></script><script type="text/javascript" async="" src="JVM%E8%B0%83%E4%BC%98%E6%80%BB%E7%BB%93%20-Xms%20-Xmx%20-Xmn%20-Xss%20-%20%E6%9D%8E%E5%85%8B%E5%8D%8E%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/map.js"></script><script async="" src="JVM%E8%B0%83%E4%BC%98%E6%80%BB%E7%BB%93%20-Xms%20-Xmx%20-Xmn%20-Xss%20-%20%E6%9D%8E%E5%85%8B%E5%8D%8E%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/analytics.js"></script><script src="JVM%E8%B0%83%E4%BC%98%E6%80%BB%E7%BB%93%20-Xms%20-Xmx%20-Xmn%20-Xss%20-%20%E6%9D%8E%E5%85%8B%E5%8D%8E%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/jquery-2.js"></script>
+    <script>var currentBlogId=67688;var currentBlogApp='likehua',cb_enable_mathjax=false;var isLogined=false;</script>
+    <script src="JVM%E8%B0%83%E4%BC%98%E6%80%BB%E7%BB%93%20-Xms%20-Xmx%20-Xmn%20-Xss%20-%20%E6%9D%8E%E5%85%8B%E5%8D%8E%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.js" type="text/javascript"></script>
+<link rel="preload" href="JVM%E8%B0%83%E4%BC%98%E6%80%BB%E7%BB%93%20-Xms%20-Xmx%20-Xmn%20-Xss%20-%20%E6%9D%8E%E5%85%8B%E5%8D%8E%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js" as="script"><script type="text/javascript" src="JVM%E8%B0%83%E4%BC%98%E6%80%BB%E7%BB%93%20-Xms%20-Xmx%20-Xmn%20-Xss%20-%20%E6%9D%8E%E5%85%8B%E5%8D%8E%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js"></script><script src="JVM%E8%B0%83%E4%BC%98%E6%80%BB%E7%BB%93%20-Xms%20-Xmx%20-Xmn%20-Xss%20-%20%E6%9D%8E%E5%85%8B%E5%8D%8E%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_2019043001.js" async=""></script></head>
+<body>
+<a name="top"></a>
+
+
+<!--done-->
+<div id="home">
+<div id="header">
+	<div id="blogTitle">
+	<a id="lnkBlogLogo" href="https://www.cnblogs.com/likehua/"><img id="blogLogo" src="JVM%E8%B0%83%E4%BC%98%E6%80%BB%E7%BB%93%20-Xms%20-Xmx%20-Xmn%20-Xss%20-%20%E6%9D%8E%E5%85%8B%E5%8D%8E%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/logo.gif" alt="返回主页"></a>			
+		
+<!--done-->
+<h1><a id="Header1_HeaderTitle" class="headermaintitle" href="https://www.cnblogs.com/likehua/">李克华</a></h1>
+<h2>云计算高级群:  292870151  195907286
+交流：Hadoop、NoSQL、分布式、lucene、solr、nutch</h2>
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+	<div id="navigator">
+		
+<ul id="navList">
+	<li><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">博客园</a></li>
+	<li><a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/likehua/">首页</a></li>
+	<li><a href="http://news.cnblogs.com/">新闻</a></li>
+	<li><a id="blog_nav_newpost" class="menu" rel="nofollow" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">新随笔</a></li>
+	<li><a id="blog_nav_contact" accesskey="9" class="menu" rel="nofollow" href="https://msg.cnblogs.com/send/%E6%9D%8E%E5%85%8B%E5%8D%8E">联系</a></li>
+	<li><a id="blog_nav_admin" class="menu" rel="nofollow" href="https://i.cnblogs.com/">管理</a></li>
+	<li><a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/likehua/rss">订阅</a>
+	<a id="blog_nav_rss_image" class="aHeaderXML" href="https://www.cnblogs.com/likehua/rss"><img src="JVM%E8%B0%83%E4%BC%98%E6%80%BB%E7%BB%93%20-Xms%20-Xmx%20-Xmn%20-Xss%20-%20%E6%9D%8E%E5%85%8B%E5%8D%8E%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/xml.gif" alt="订阅"></a></li>
+</ul>
+
+
+		<div class="blogStats">
+			
+			<div id="blog_stats">
+<!--done-->
+随笔- 258&nbsp;
+文章- 0&nbsp;
+评论- 111&nbsp;
+</div>
+			
+		</div><!--end: blogStats -->
+	</div><!--end: navigator 博客导航栏 -->
+</div><!--end: header 头部 -->
+
+<div id="main">
+	<div id="mainContent">
+	<div class="forFlow">
+		
+        <div id="post_detail">
+<!--done-->
+<div id="topics">
+	<div class="post">
+		<h1 class="postTitle">
+			<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/likehua/p/3369823.html">JVM调优总结 -Xms -Xmx -Xmn -Xss</a>
+		</h1>
+		<div class="clear"></div>
+		<div class="postBody">
+			<div id="cnblogs_post_body" class="blogpost-body"><div id="blog_content" class="blog_content"><ol>
+<li><strong>堆大小设置<br></strong>JVM 
+中最大堆大小有三方面限制：相关操作系统的数据模型（32-bt还是64-bit）限制；系统的可用虚拟内存限制；系统的可用物理内存限制。32位系统
+下，一般限制在1.5G~2G；64为操作系统对内存无限制。我在Windows Server 2003 
+系统，3.5G物理内存，JDK5.0下测试，最大可设置为1478m。<br><strong><span style="font-family: Courier New;">典型设置：</span></strong>
+<ul>
+<li><span style="font-family: Courier New;">java <strong>-Xmx3550m -Xms3550m -Xmn2g</strong> </span><span style="font-family: Courier New;"><strong>-Xss128k</strong><br><strong>-</strong></span><span style="font-family: Courier New;"><strong>Xmx3550m</strong>：设置JVM最大可用内存为3550M。<br><strong>-Xms3550m</strong></span><span style="font-family: Courier New;">：设置JVM促使内存为3550m。此值可以设置与-Xmx相同，以避免每次垃圾回收完成后JVM重新分配内存。<br><strong><span style="color: #ff0000;">-Xmn2g</span></strong></span><span style="font-family: Courier New;">：设置年轻代大小为2G。<strong><span style="color: #0000ff;">整个JVM内存大小=年轻代大小 + 年老代大小 + 持久代大小</span></strong>。持久代一般固定大小为64m，所以增大年轻代后，将会减小年老代大小。此值对系统性能影响较大，Sun官方推荐配置为整个堆的3/8。<br><strong>-Xss128k</strong></span><span style="font-family: Courier New;">：
+设置每个线程的堆栈大小。JDK5.0以后每个线程堆栈大小为1M，以前每个线程堆栈大小为256K。更具应用的线程所需内存大小进行调整。在相同物理内
+存下，减小这个值能生成更多的线程。但是操作系统对一个进程内的线程数还是有限制的，不能无限生成，经验值在3000~5000左右。<br></span></li>
+<li><span style="font-family: Courier New;">java -Xmx3550m -Xms3550m -Xss128k <strong>-XX:NewRatio=4 -XX:SurvivorRatio=4 -XX:MaxPermSize=16m -XX:MaxTenuringThreshold=0</strong><br><strong>-XX:NewRatio=4</strong></span><span style="font-family: Courier New;">:设置年轻代（包括Eden和两个Survivor区）与年老代的比值（除去持久代）。设置为4，则年轻代与年老代所占比值为1：4，年轻代占整个堆栈的1/5<br><strong>-XX:SurvivorRatio=4</strong></span>：设置年轻代中Eden区与Survivor区的大小比值。设置为4，则两个Survivor区与一个Eden区的比值为2:4，一个Survivor区占整个年轻代的1/6<br><strong><span style="font-family: Courier New;">-XX:MaxPermSize=16m</span></strong>:设置持久代大小为16m。<br><span style="font-family: Courier New;"><strong>-XX:MaxTenuringThreshold=0</strong>：设置垃圾最大年龄。<strong><span style="color: #0000ff;">如果设置为0的话，则年轻代对象不经过Survivor区，直接进入年老代</span></strong>。对于年老代比较多的应用，可以提高效率。<strong><span style="color: #0000ff;">如果将此值设置为一个较大值，则年轻代对象会在Survivor区进行多次复制，这样可以增加对象再年轻代的存活时间</span></strong>，增加在年轻代即被回收的概论。</span> </li>
+
+</ul>
+
+</li>
+<li><strong>回收器选择<br></strong>JVM给了三种选择：<strong>串行收集器、并行收集器、并发收集器</strong>，但是串行收集器只适用于小数据量的情况，所以这里的选择主要针对并行收集器和并发收集器。默认情况下，JDK5.0以前都是使用串行收集器，如果想使用其他收集器需要在启动时加入相应参数。JDK5.0以后，JVM会根据当前<a href="http://java.sun.com/j2se/1.5.0/docs/guide/vm/server-class.html">系统配置</a>进行判断。<ol>
+<li><strong>吞吐量优先</strong>的并行收集器<br>如上文所述，并行收集器主要以到达一定的吞吐量为目标，适用于科学技术和后台处理等。<br><strong>典型配置</strong>：
+<ul>
+<li><span style="font-family: Courier New;">java -Xmx3800m -Xms3800m -Xmn2g -Xss128k <strong>-XX:+UseParallelGC -XX:ParallelGCThreads=20</strong><br><strong>-XX:+UseParallelGC</strong></span><span style="font-family: Courier New;">：选择垃圾收集器为并行收集器。</span><strong><span style="font-family: Courier New; color: #0000ff;">此配置仅对年轻代有效。即上述配置下，年轻代使用并发收集，而年老代仍旧使用串行收集。<br></span></strong><strong><span style="font-family: Courier New;">-XX:ParallelGCThreads=20</span></strong><span style="font-family: Courier New;">：配置并行收集器的线程数，即：同时多少个线程一起进行垃圾回收。此值最好配置与处理器数目相等。<br></span></li>
+<li><span style="font-family: Courier New;">java -Xmx3550m -Xms3550m -Xmn2g -Xss128k -XX:+UseParallelGC -XX:ParallelGCThreads=20 </span><strong><span style="font-family: Courier New;">-XX:+UseParallelOldGC<br></span></strong><strong><span style="font-family: Courier New;">-XX:+UseParallelOldGC</span></strong><span style="font-family: Courier New;">：配置年老代垃圾收集方式为并行收集。JDK6.0支持对年老代并行收集。<br></span></li>
+<li><span style="font-family: Courier New;">java -Xmx3550m -Xms3550m -Xmn2g -Xss128k -XX:+UseParallelGC&nbsp; </span><strong><span style="font-family: Courier New;">-XX:MaxGCPauseMillis=100<br></span></strong><strong><span style="font-family: Courier New;">-XX:MaxGCPauseMillis=100</span></strong><span style="font-family: Courier New;"><strong>:</strong>设置每次年轻代垃圾回收的最长时间，如果无法满足此时间，JVM会自动调整年轻代大小，以满足此值。<br></span></li>
+<li><span style="font-family: Courier New;">java -Xmx3550m -Xms3550m -Xmn2g -Xss128k -XX:+UseParallelGC&nbsp; -XX:MaxGCPauseMillis=100 </span><strong>-XX:+UseAdaptiveSizePolicy<br>-XX:+UseAdaptiveSizePolicy</strong>：设置此选项后，并行收集器会自动选择年轻代区大小和相应的Survivor区比例，以达到目标系统规定的最低相应时间或者收集频率等，此值建议使用并行收集器时，一直打开。</li>
+
+</ul>
+
+</li>
+<li><strong>响应时间优先</strong>的并发收集器<br>如上文所述，并发收集器主要是保证系统的响应时间，减少垃圾收集时的停顿时间。适用于应用服务器、电信领域等。<br><strong>典型配置</strong>：
+<ul>
+<li><span style="font-family: Courier New;">java -Xmx3550m -Xms3550m -Xmn2g -Xss128k -XX:ParallelGCThreads=20 </span><strong><span style="font-family: Courier New;">-XX:+UseConcMarkSweepGC -XX:+UseParNewGC<br></span></strong><span style="font-family: Courier New;"><strong>-XX:+UseConcMarkSweepGC</strong>：设置年老代为并发收集。测试中配置这个以后，-XX:NewRatio=4的配置失效了，原因不明。所以，此时年轻代大小最好用-Xmn设置。<br><strong>-XX:+UseParNewGC</strong>:设置年轻代为并行收集。可与CMS收集同时使用。JDK5.0以上，JVM会根据系统配置自行设置，所以无需再设置此值。</span> </li>
+<li><span style="font-family: Courier New;">java -Xmx3550m -Xms3550m -Xmn2g -Xss128k -XX:+UseConcMarkSweepGC </span><strong><span style="font-family: Courier New;">-XX:CMSFullGCsBeforeCompaction=5 </span>-XX:+UseCMSCompactAtFullCollection</strong><br><span style="font-family: Courier New;"><strong>-XX:CMSFullGCsBeforeCompaction</strong>：由于并发收集器不对内存空间进行压缩、整理，所以运行一段时间以后会产生“碎片”，使得运行效率降低。此值设置运行多少次GC以后对内存空间进行压缩、整理。<br></span><strong>-XX:+UseCMSCompactAtFullCollection</strong>：打开对年老代的压缩。可能会影响性能，但是可以消除碎片</li>
+
+</ul>
+
+</li>
+
+</ol></li>
+<li><strong>辅助信息<br></strong>JVM提供了大量命令行参数，打印信息，供调试使用。主要有以下一些：
+<ul>
+<li><strong>-XX:+PrintGC<br></strong>输出形式<strong>：[GC 118250K-&gt;113543K(130112K), 0.0094143 secs] </strong>
+<p><strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ [Full GC 121376K-&gt;10414K(130112K), 0.0650971 secs]</strong> </p>
+
+</li>
+<li><strong>-XX:+PrintGCDetails<br></strong>输出形式<strong>：[GC [DefNew: 8614K-&gt;781K(9088K), 0.0123035 secs] 118250K-&gt;113543K(130112K), 0.0124633 secs] </strong>
+<p><strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ [GC [DefNew: 8614K-&gt;8614K(9088K), 0.0000665 secs][Tenured: 
+112761K-&gt;10414K(121024K), 0.0433488 secs] 
+121376K-&gt;10414K(130112K), 0.0436268 secs]</strong> </p>
+
+</li>
+<li><strong>-XX:+PrintGCTimeStamps</strong> -XX:+PrintGC：PrintGCTimeStamps可与上面两个混合使用<br>输出形式：<strong>11.851: [GC 98328K-&gt;93620K(130112K), 0.0082960 secs]<br></strong></li>
+<li><strong>-XX:+PrintGCApplicationConcurrentTime:</strong>打印每次垃圾回收前，程序未中断的执行时间。可与上面混合使用<br>输出形式：<strong>Application time: 0.5291524 seconds<br></strong></li>
+<li><strong>-XX:+PrintGCApplicationStoppedTime</strong>：打印垃圾回收期间程序暂停的时间。可与上面混合使用<br>输出形式：<strong>Total time for which application threads were stopped: 0.0468229 seconds<br></strong></li>
+<li><strong>-XX:PrintHeapAtGC</strong>:打印GC前后的详细堆栈信息<br>输出形式：<br>34.702: [GC {Heap before gc invocations=7:<br>&nbsp;def new generation&nbsp;&nbsp; total 55296K, used 52568K [0x1ebd0000, 0x227d0000, 0x227d0000)<br><strong>eden space 49152K,&nbsp; 99% used</strong> [0x1ebd0000, 0x21bce430, 0x21bd0000)<br><strong>from space 6144K,&nbsp; 55% used</strong> [0x221d0000, 0x22527e10, 0x227d0000)<br>&nbsp; to&nbsp;&nbsp; space 6144K,&nbsp;&nbsp; 0% used [0x21bd0000, 0x21bd0000, 0x221d0000)<br>&nbsp;tenured generation&nbsp;&nbsp; total 69632K, used 2696K [0x227d0000, 0x26bd0000, 0x26bd0000)<br><strong>the space 69632K,&nbsp;&nbsp; 3% used</strong> [0x227d0000, 0x22a720f8, 0x22a72200, 0x26bd0000)<br>&nbsp;compacting perm gen&nbsp; total 8192K, used 2898K [0x26bd0000, 0x273d0000, 0x2abd0000)<br>&nbsp;&nbsp; the space 8192K,&nbsp; 35% used [0x26bd0000, 0x26ea4ba8, 0x26ea4c00, 0x273d0000)<br>&nbsp;&nbsp;&nbsp; ro space 8192K,&nbsp; 66% used [0x2abd0000, 0x2b12bcc0, 0x2b12be00, 0x2b3d0000)<br>&nbsp;&nbsp;&nbsp; rw space 12288K,&nbsp; 46% used [0x2b3d0000, 0x2b972060, 0x2b972200, 0x2bfd0000)<br>34.735: [DefNew: 52568K-&gt;3433K(55296K), 0.0072126 secs] 55264K-&gt;6615K(124928K)<strong>Heap after gc invocations=8:<br></strong>&nbsp;def new generation&nbsp;&nbsp; total 55296K, used 3433K [0x1ebd0000, 0x227d0000, 0x227d0000)<br><strong>eden space 49152K,&nbsp;&nbsp; 0% used</strong> [0x1ebd0000, 0x1ebd0000, 0x21bd0000)<br>&nbsp; from space 6144K,&nbsp; 55% used [0x21bd0000, 0x21f2a5e8, 0x221d0000)<br>&nbsp; to&nbsp;&nbsp; space 6144K,&nbsp;&nbsp; 0% used [0x221d0000, 0x221d0000, 0x227d0000)<br>&nbsp;tenured generation&nbsp;&nbsp; total 69632K, used 3182K [0x227d0000, 0x26bd0000, 0x26bd0000)<br><strong>the space 69632K,&nbsp;&nbsp; 4% used </strong>[0x227d0000, 0x22aeb958, 0x22aeba00, 0x26bd0000)<br>&nbsp;compacting perm gen&nbsp; total 8192K, used 2898K [0x26bd0000, 0x273d0000, 0x2abd0000)<br>&nbsp;&nbsp; the space 8192K,&nbsp; 35% used [0x26bd0000, 0x26ea4ba8, 0x26ea4c00, 0x273d0000)<br>&nbsp;&nbsp;&nbsp; ro space 8192K,&nbsp; 66% used [0x2abd0000, 0x2b12bcc0, 0x2b12be00, 0x2b3d0000)<br>&nbsp;&nbsp;&nbsp; rw space 12288K,&nbsp; 46% used [0x2b3d0000, 0x2b972060, 0x2b972200, 0x2bfd0000)<br>}<br>, 0.0757599 secs]</li>
+<li><strong>-Xloggc:filename</strong>:与上面几个配合使用，把相关日志信息记录到文件以便分析。</li>
+
+</ul>
+
+</li>
+<li><strong>常见配置汇总</strong><ol>
+<li>堆设置
+<ul>
+<li><strong>-Xms</strong>:初始堆大小 </li>
+<li><strong>-Xmx</strong>:最大堆大小 </li>
+<li><strong>-XX:NewSize=n</strong>:设置年轻代大小 </li>
+<li><strong>-XX:NewRatio=n:</strong>设置年轻代和年老代的比值。如:为3，表示年轻代与年老代比值为1：3，年轻代占整个年轻代年老代和的1/4 </li>
+<li><strong>-XX:SurvivorRatio=n</strong>:年轻代中Eden区与两个Survivor区的比值。注意Survivor区有两个。如：3，表示Eden：Survivor=3：2，一个Survivor区占整个年轻代的1/5 </li>
+<li><strong>-XX:MaxPermSize=n</strong>:设置持久代大小</li>
+
+</ul>
+
+</li>
+<li>收集器设置
+<ul>
+<li><strong>-XX:+UseSerialGC</strong>:设置串行收集器 </li>
+<li><strong>-XX:+UseParallelGC</strong>:设置并行收集器 </li>
+<li><strong>-XX:+UseParalledlOldGC</strong>:设置并行年老代收集器 </li>
+<li><strong>-XX:+UseConcMarkSweepGC</strong>:设置并发收集器</li>
+
+</ul>
+
+</li>
+<li>垃圾回收统计信息
+<ul>
+<li><strong>-XX:+PrintGC</strong> </li>
+<li><strong>-XX:+PrintGCDetails</strong> </li>
+<li><strong>-XX:+PrintGCTimeStamps</strong> </li>
+<li><strong>-Xloggc:filename</strong></li>
+
+</ul>
+
+</li>
+<li>并行收集器设置
+<ul>
+<li><strong>-XX:ParallelGCThreads=n</strong>:设置并行收集器收集时使用的CPU数。并行收集线程数。 </li>
+<li><strong>-XX:MaxGCPauseMillis=n</strong>:设置并行收集最大暂停时间 </li>
+<li><strong>-XX:GCTimeRatio=n</strong>:设置垃圾回收时间占程序运行时间的百分比。公式为1/(1+n)</li>
+
+</ul>
+
+</li>
+<li>并发收集器设置
+<ul>
+<li><strong>-XX:+CMSIncrementalMode</strong>:设置为增量模式。适用于单CPU情况。 </li>
+<li><strong>-XX:ParallelGCThreads=n</strong>:设置并发收集器年轻代收集方式为并行收集时，使用的CPU数。并行收集线程数。</li>
+
+</ul>
+
+</li>
+
+</ol></li>
+
+</ol>
+<p><br><strong><span style="font-size: x-small;"><span style="font-size: xx-small;">四、调优总结</span></span></strong></p>
+<ol>
+<li><strong>年轻代大小选择</strong>
+<ul>
+<li><strong>响应时间优先的应用</strong>：<strong><span style="color: #0000ff;">尽可能设大，直到接近系统的最低响应时间限制</span></strong>（根据实际情况选择）。在此种情况下，年轻代收集发生的频率也是最小的。同时，减少到达年老代的对象。 </li>
+<li><strong>吞吐量优先的应用</strong>：尽可能的设置大，可能到达Gbit的程度。因为对响应时间没有要求，垃圾收集可以并行进行，一般适合8CPU以上的应用。</li>
+
+</ul>
+
+</li>
+<li><strong>年老代大小选择</strong>
+<ul>
+<li><strong>响应时间优先的应用</strong>：年老代使用并发收集器，所以其大小需要小心设置，一般要考虑<strong>并发会话率</strong>和<strong>会话持续时间</strong>等一些参数。如果堆设置小了，可以会造成内存碎片、高回收频率以及应用暂停而使用传统的标记清除方式；如果堆大了，则需要较长的收集时间。最优化的方案，一般需要参考以下数据获得：
+<ul>
+<li>并发垃圾收集信息 </li>
+<li>持久代并发收集次数 </li>
+<li>传统GC信息 </li>
+<li>花在年轻代和年老代回收上的时间比例</li>
+
+</ul>
+
+减少年轻代和年老代花费的时间，一般会提高应用的效率</li>
+<li><strong>吞吐量优先的应用</strong>：一般吞吐量优先的应用都有一个很大的年轻代和一个较小的年老代。原因是，这样可以尽可能回收掉大部分短期对象，减少中期的对象，而年老代尽存放长期存活对象。</li>
+
+</ul>
+
+</li>
+<li><strong>较小堆引起的碎片问题<br></strong>因为年老代的并发收集器使用标记、清除算法，所以不会对堆进行压缩。当收集器回
+收时，他会把相邻的空间进行合并，这样可以分配给较大的对象。但是，当堆空间较小时，运行一段时间以后，就会出现“碎片”，如果并发收集器找不到足够的空
+间，那么并发收集器将会停止，然后使用传统的标记、清除方式进行回收。如果出现“碎片”，可能需要进行如下配置：
+<ul>
+<li><strong>-XX:+UseCMSCompactAtFullCollection</strong>：使用并发收集器时，开启对年老代的压缩。 </li>
+<li><strong>-XX:CMSFullGCsBeforeCompaction=0</strong>：上面配置开启的情况下，这里设置多少次Full GC后，对年老代进行压缩</li>
+
+</ul>
+
+</li>
+
+</ol></div></div><div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory"></div>
+<div id="EntryTag">标签: <a href="https://www.cnblogs.com/likehua/tag/java/">java</a>, <a href="https://www.cnblogs.com/likehua/tag/JVM/">JVM</a></div>
+<div id="blog_post_info"><div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(3369823,cb_blogId,1);green_channel_success(this,'谢谢推荐！');">好文要顶</a>
+            <a id="green_channel_follow" onclick="follow('5852238d-7c2e-df11-ba8f-001cf0cd104b');" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="JVM%E8%B0%83%E4%BC%98%E6%80%BB%E7%BB%93%20-Xms%20-Xmx%20-Xmn%20-Xss%20-%20%E6%9D%8E%E5%85%8B%E5%8D%8E%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="JVM%E8%B0%83%E4%BC%98%E6%80%BB%E7%BB%93%20-Xms%20-Xmx%20-Xmn%20-Xss%20-%20%E6%9D%8E%E5%85%8B%E5%8D%8E%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/likehua/" target="_blank"><img src="JVM%E8%B0%83%E4%BC%98%E6%80%BB%E7%BB%93%20-Xms%20-Xmx%20-Xmn%20-Xss%20-%20%E6%9D%8E%E5%85%8B%E5%8D%8E%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/sample_face.gif" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/likehua/">李克华</a><br>
+            <a href="http://home.cnblogs.com/u/likehua/followees">关注 - 7</a><br>
+            <a href="http://home.cnblogs.com/u/likehua/followers">粉丝 - 358</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow('5852238d-7c2e-df11-ba8f-001cf0cd104b');return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(3369823,'Digg')">
+        <span class="diggnum" id="digg_count">7</span>
+    </div>
+    <div class="buryit" onclick="votePost(3369823,'Bury')">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+<div class="clear"></div>
+<div id="post_next_prev"><a href="https://www.cnblogs.com/likehua/p/3369678.html" class="p_n_p_prefix">« </a> 上一篇：<a href="https://www.cnblogs.com/likehua/p/3369678.html" title="发布于2013-10-15 10:00">一致性哈希算法（Consistent Hashing） .</a><br><a href="https://www.cnblogs.com/likehua/p/3370364.html" class="p_n_p_prefix">» </a> 下一篇：<a href="https://www.cnblogs.com/likehua/p/3370364.html" title="发布于2013-10-15 15:48">sql 百万级数据库优化方案</a><br></div>
+</div>
+
+
+		</div>
+		<div class="postDesc">posted @ <span id="post-date">2013-10-15 11:06</span> <a href="https://www.cnblogs.com/likehua/">李克华</a> 阅读(<span id="post_view_count">63038</span>) 评论(<span id="post_comment_count">4</span>)  <a href="https://i.cnblogs.com/EditPosts.aspx?postid=3369823" rel="nofollow">编辑</a> <a href="#" onclick="AddToWz(3369823);return false;">收藏</a></div>
+	</div>
+	<script type="text/javascript">var allowComments=true,cb_blogId=67688,cb_entryId=3369823,cb_blogApp=currentBlogApp,cb_blogUserGuid='5852238d-7c2e-df11-ba8f-001cf0cd104b',cb_entryCreatedDate='2013/10/15 11:06:00';loadViewCount(cb_entryId);var cb_postType=1;var isMarkdown=false;</script>
+	
+</div><!--end: topics 文章、评论容器-->
+</div><a name="!comments"></a><div id="blog-comments-placeholder"><div id="comments_pager_top"></div>
+<!--done-->
+<br>
+<div class="feedback_area_title">发表评论</div>
+<div class="feedbackNoItems"></div>
+	
+
+		<div class="feedbackItem">
+			<div class="feedbackListSubtitle">
+				<div class="feedbackManage">
+					&nbsp;&nbsp;<span class="comment_actions"></span>
+				</div>
+				<a href="#3048933" class="layer">#1楼</a><a name="3048933" id="comment_anchor_3048933"></a> <span class="comment_date">2014-10-22 15:47</span> | <a id="a_comment_author_3048933" href="https://www.cnblogs.com/ycyz13/" target="_blank">ycyz13</a> <a href="http://msg.cnblogs.com/send/ycyz13" title="发送站内短消息" class="sendMsg2This">&nbsp;</a>
+			</div>
+			<div class="feedbackCon">
+				<div id="comment_body_3048933" class="blog_comment_body">总结的很详细。<br>十分受用。</div><div class="comment_vote"><a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(3048933,'Digg',this)">支持(0)</a><a href="javascript:void(0);" class="comment_bury" onclick="return voteComment(3048933,'Bury',this)">反对(0)</a></div><br>
+			</div>
+		</div>
+	
+		<div class="feedbackItem">
+			<div class="feedbackListSubtitle">
+				<div class="feedbackManage">
+					&nbsp;&nbsp;<span class="comment_actions"></span>
+				</div>
+				<a href="#3554057" class="layer">#2楼</a><a name="3554057" id="comment_anchor_3554057"></a> <span class="comment_date">2016-11-11 22:17</span> | <a id="a_comment_author_3554057" href="http://home.cnblogs.com/u/1048390/" target="_blank">鱼肉大数据</a> <a href="http://msg.cnblogs.com/send/%E9%B1%BC%E8%82%89%E5%A4%A7%E6%95%B0%E6%8D%AE" title="发送站内短消息" class="sendMsg2This">&nbsp;</a>
+			</div>
+			<div class="feedbackCon">
+				<div id="comment_body_3554057" class="blog_comment_body">非常实用，太好了<br><br>回头慢慢看</div><div class="comment_vote"><a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(3554057,'Digg',this)">支持(0)</a><a href="javascript:void(0);" class="comment_bury" onclick="return voteComment(3554057,'Bury',this)">反对(0)</a></div><br>
+			</div>
+		</div>
+	
+		<div class="feedbackItem">
+			<div class="feedbackListSubtitle">
+				<div class="feedbackManage">
+					&nbsp;&nbsp;<span class="comment_actions"></span>
+				</div>
+				<a href="#3770916" class="layer">#3楼</a><a name="3770916" id="comment_anchor_3770916"></a> <span class="comment_date">2017-08-30 18:12</span> | <a id="a_comment_author_3770916" href="https://www.cnblogs.com/blbl9527/" target="_blank">blbl9527</a> <a href="http://msg.cnblogs.com/send/blbl9527" title="发送站内短消息" class="sendMsg2This">&nbsp;</a>
+			</div>
+			<div class="feedbackCon">
+				<div id="comment_body_3770916" class="blog_comment_body">感谢，十分感谢，么么哒</div><div class="comment_vote"><a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(3770916,'Digg',this)">支持(0)</a><a href="javascript:void(0);" class="comment_bury" onclick="return voteComment(3770916,'Bury',this)">反对(0)</a></div><span id="comment_3770916_avatar" style="display:none;">http://pic.cnblogs.com/face/1118995/20170724152532.png</span><br>
+			</div>
+		</div>
+	
+		<div class="feedbackItem">
+			<div class="feedbackListSubtitle">
+				<div class="feedbackManage">
+					&nbsp;&nbsp;<span class="comment_actions"></span>
+				</div>
+				<a href="#4185822" class="layer">#4楼</a><a name="4185822" id="comment_anchor_4185822"></a><span id="comment-maxId" style="display:none;">4185822</span><span id="comment-maxDate" style="display:none;">2019/2/22 16:51:49</span> <span class="comment_date">2019-02-22 16:51</span> | <a id="a_comment_author_4185822" href="https://www.cnblogs.com/lilifang/" target="_blank">Judith_123</a> <a href="http://msg.cnblogs.com/send/Judith_123" title="发送站内短消息" class="sendMsg2This">&nbsp;</a>
+			</div>
+			<div class="feedbackCon">
+				<div id="comment_body_4185822" class="blog_comment_body">mark</div><div class="comment_vote"><a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4185822,'Digg',this)">支持(0)</a><a href="javascript:void(0);" class="comment_bury" onclick="return voteComment(4185822,'Bury',this)">反对(0)</a></div><br>
+			</div>
+		</div>
+	<div id="comments_pager_bottom"></div></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id="comment_form" class="commentform">
+<a name="commentform"></a>
+<div id="divCommentShow"></div>
+<div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+<div id="comment_form_container"><div class="login_tips">注册用户登录后才能发表评论，请 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login('commentform');">登录</a> 或 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，<a href="http://www.cnblogs.com/">访问</a>网站首页。</div></div>
+<div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+<div id="ad_t2"><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-工控')">【推荐】超50万C++/C#源码: 大型实时仿真组态图形源码</a><br><a href="https://www.bagevent.com/event/2195041?bag_track=13072958" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-看雪')">【活动】看雪2019安全开发者峰会，共话安全领域焦点话题</a><br></div>
+<div id="opt_under_post"></div>
+<script async="async" src="JVM%E8%B0%83%E4%BC%98%E6%80%BB%E7%BB%93%20-Xms%20-Xmx%20-Xmn%20-Xss%20-%20%E6%9D%8E%E5%85%8B%E5%8D%8E%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/gpt.js"></script>
+<script>
+  var googletag = googletag || {};
+  googletag.cmd = googletag.cmd || [];
+</script>
+<script>
+  googletag.cmd.push(function() {
+        googletag.defineSlot('/1090369/C1', [300, 250], 'div-gpt-ad-1546353474406-0').addService(googletag.pubads());
+        googletag.defineSlot('/1090369/C2', [468, 60], 'div-gpt-ad-1539008685004-0').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+  });
+</script>
+<div id="cnblogs_c1" class="c_ad_block">
+    <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="CIX8wNGdhOICFVCWvQodkC0Gvw"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="1" data-load-complete="true" width="300" height="250" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_news"><div class="itnews c_ad_block"><b>相关博文：</b><br>·  <a href="https://www.cnblogs.com/duyinqiang/p/5206621.html" target="_blank" onclick="clickRecomItmem(5206621)">JVM调优总结（七）-典型配置举例1</a><br>·  <a href="https://www.cnblogs.com/langtianya/p/3898657.html" target="_blank" onclick="clickRecomItmem(3898657)">JVM调优总结 -Xms -Xmx -Xmn -Xss等</a><br>·  <a href="https://www.cnblogs.com/shengs/p/5389244.html" target="_blank" onclick="clickRecomItmem(5389244)">JVM调优总结 -Xms -Xmx -Xmn -Xss</a><br>·  <a href="https://www.cnblogs.com/hushaojun/p/4948503.html" target="_blank" onclick="clickRecomItmem(4948503)">JVM调优总结 -Xms -Xmx -Xmn -Xss</a><br>·  <a href="https://www.cnblogs.com/yujun19880729/p/3515507.html" target="_blank" onclick="clickRecomItmem(3515507)">JVM调优总结（七）-典型配置举例1</a><br></div></div>
+<div id="cnblogs_c2" class="c_ad_block">
+    <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="CK7Ev9GdhOICFVCWvQodkC0Gvw"><div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C2_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C2_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="2" data-load-complete="true" width="468" height="60" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_kb"><div class="itnews c_ad_block"><b>最新新闻</b>：<br> ·  <a href="https://news.cnblogs.com/n/624798/" target="_blank">知乎“变”与“不变”</a><br> ·  <a href="https://news.cnblogs.com/n/624797/" target="_blank">微软将Office生产力套件从Windows 10商店中移除</a><br> ·  <a href="https://news.cnblogs.com/n/624796/" target="_blank">Uber和Lyft的隐痛：司机大面积“停摆”困局难破</a><br> ·  <a href="https://news.cnblogs.com/n/624795/" target="_blank">甲骨文如何杀死 Java EE</a><br> ·  <a href="https://news.cnblogs.com/n/624794/" target="_blank">中消协发智能门锁试验报告：半数样品指纹识别有风险</a><br>» <a href="http://news.cnblogs.com/" title="IT新闻" target="_blank">更多新闻...</a></div></div>
+<div id="HistoryToday" class="c_ad_block"></div>
+<script type="text/javascript">
+ if(enablePostBottom()) {
+    codeHighlight();
+    fixPostBody();
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverT2();
+    deliverC1();
+    deliverC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);  
+}
+</script>
+</div>
+
+    
+	</div><!--end: forFlow -->
+	</div><!--end: mainContent 主体内容容器-->
+
+	<div id="sideBar">
+		<div id="sideBarMain">
+			
+<!--done-->
+<div class="newsItem">
+<h3 class="catListTitle">公告</h3>
+	<div id="blog-news"><div id="clustrmaps-widget"></div><script type="text/javascript">window['__document_write_ajax_callbacks__']['3']();</script><script type="text/javascript">window['__document_write_ajax_callbacks__']['1']();</script><noscript><a href="http://www3.clustrmaps.com/user/c3af37fe"><img src="http://www3.clustrmaps.com/stats/maps-no_clusters/www.cnblogs.com-likehua-thumb.jpg" alt="Locations of visitors to this page" /></a></noscript><div id="profile_block">昵称：<a href="https://home.cnblogs.com/u/likehua/">李克华</a><br>园龄：<a href="https://home.cnblogs.com/u/likehua/" title="入园时间：2010-03-13">9年1个月</a><br>粉丝：<a href="https://home.cnblogs.com/u/likehua/followers/">358</a><br>关注：<a href="https://home.cnblogs.com/u/likehua/followees/">7</a><div id="p_b_follow"><a href="javascript:void(0);" onclick="follow('5852238d-7c2e-df11-ba8f-001cf0cd104b')">+加关注</a></div><script type="text/javascript">window['__document_write_ajax_callbacks__']['4']();</script><script>window['__document_write_ajax_callbacks__']['2']();</script></div></div><script type="text/javascript">loadBlogNews();</script>
+</div>
+
+			<div id="calendar"><div id="blog-calendar" style=""><table id="blogCalendar" class="Cal" title="Calendar" cellspacing="0" cellpadding="0">
+	<tbody><tr><td colspan="7"><table class="CalTitle" cellspacing="0">
+		<tbody><tr><td class="CalNextPrev"><a href="javascript:void(0);" onclick="loadBlogCalendar('2019/04/01');return false;">&lt;</a></td><td align="center">2019年5月</td><td class="CalNextPrev" align="right"><a href="javascript:void(0);" onclick="loadBlogCalendar('2019/06/01');return false;">&gt;</a></td></tr>
+	</tbody></table></td></tr><tr><th class="CalDayHeader" abbr="日" scope="col" align="center">日</th><th class="CalDayHeader" abbr="一" scope="col" align="center">一</th><th class="CalDayHeader" abbr="二" scope="col" align="center">二</th><th class="CalDayHeader" abbr="三" scope="col" align="center">三</th><th class="CalDayHeader" abbr="四" scope="col" align="center">四</th><th class="CalDayHeader" abbr="五" scope="col" align="center">五</th><th class="CalDayHeader" abbr="六" scope="col" align="center">六</th></tr><tr><td class="CalOtherMonthDay" align="center">28</td><td class="CalOtherMonthDay" align="center">29</td><td class="CalOtherMonthDay" align="center">30</td><td align="center">1</td><td align="center">2</td><td align="center">3</td><td class="CalWeekendDay" align="center">4</td></tr><tr><td class="CalTodayDay" align="center">5</td><td align="center">6</td><td align="center">7</td><td align="center">8</td><td align="center">9</td><td align="center">10</td><td class="CalWeekendDay" align="center">11</td></tr><tr><td class="CalWeekendDay" align="center">12</td><td align="center">13</td><td align="center">14</td><td align="center">15</td><td align="center">16</td><td align="center">17</td><td class="CalWeekendDay" align="center">18</td></tr><tr><td class="CalWeekendDay" align="center">19</td><td align="center">20</td><td align="center">21</td><td align="center">22</td><td align="center">23</td><td align="center">24</td><td class="CalWeekendDay" align="center">25</td></tr><tr><td class="CalWeekendDay" align="center">26</td><td align="center">27</td><td align="center">28</td><td align="center">29</td><td align="center">30</td><td align="center">31</td><td class="CalOtherMonthDay" align="center">1</td></tr><tr><td class="CalOtherMonthDay" align="center">2</td><td class="CalOtherMonthDay" align="center">3</td><td class="CalOtherMonthDay" align="center">4</td><td class="CalOtherMonthDay" align="center">5</td><td class="CalOtherMonthDay" align="center">6</td><td class="CalOtherMonthDay" align="center">7</td><td class="CalOtherMonthDay" align="center">8</td></tr>
+</tbody></table></div><script type="text/javascript">loadBlogDefaultCalendar();</script></div>
+			
+			<div id="leftcontentcontainer">
+				<div id="blog-sidecolumn"><div id="sidebar_search" class="sidebar-block">
+<div id="sidebar_search" class="mySearch">
+<h3 class="catListTitle">搜索</h3>
+<div id="sidebar_search_box">
+<div id="widget_my_zzk" class="div_my_zzk"><input id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk" type="text">&nbsp;<input onclick="zzk_go()" value="找找看" id="btnZzk" class="btn_my_zzk" type="button"></div>
+<div id="widget_my_google" class="div_my_zzk"><input name="google_q" id="google_q" onkeydown="return google_go_enter(event)" class="input_my_zzk" type="text">&nbsp;<input onclick="google_go()" value="谷歌搜索" class="btn_my_zzk" type="button"></div>
+</div>
+</div>
+
+</div><div id="sidebar_shortcut" class="sidebar-block">
+<div class="catListLink">
+<h3 class="catListTitle">常用链接</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/likehua/p/" title="我的博客的随笔列表">我的随笔</a></li><li><a href="https://www.cnblogs.com/likehua/MyComments.html" title="我发表过的评论列表">我的评论</a></li><li><a href="https://www.cnblogs.com/likehua/OtherPosts.html" title="我评论过的随笔列表">我的参与</a></li><li><a href="https://www.cnblogs.com/likehua/RecentComments.html" title="我的博客的评论列表">最新评论</a></li><li><a href="https://www.cnblogs.com/likehua/tag/" title="我的博客的标签列表">我的标签</a></li>
+<li><a id="itemListLink" onclick="this.blur();WarpClass('itemListLink', 'itemListLin_con');return false;" href="#">更多链接</a></li>
+</ul>
+<div id="itemListLin_con" style="display:none;">
+<ul>
+
+</ul>
+</div>
+</div></div><div id="sidebar_toptags" class="sidebar-block">
+<div class="catListTag">
+<h3 class="catListTitle">我的标签</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/likehua/tag/java/">java</a>(70)</li><li><a href="https://www.cnblogs.com/likehua/tag/hadoop/">hadoop</a>(33)</li><li><a href="https://www.cnblogs.com/likehua/tag/solr/">solr</a>(25)</li><li><a href="https://www.cnblogs.com/likehua/tag/NoSQL/">NoSQL</a>(24)</li><li><a href="https://www.cnblogs.com/likehua/tag/lucene/">lucene</a>(20)</li><li><a href="https://www.cnblogs.com/likehua/tag/oracle/">oracle</a>(19)</li><li><a href="https://www.cnblogs.com/likehua/tag/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84/">分布式系统架构</a>(19)</li><li><a href="https://www.cnblogs.com/likehua/tag/%E6%90%9C%E7%B4%A2%E5%BC%95%E6%93%8E/">搜索引擎</a>(19)</li><li><a href="https://www.cnblogs.com/likehua/tag/zookeeper/">zookeeper</a>(12)</li><li><a href="https://www.cnblogs.com/likehua/tag/linux/">linux</a>(12)</li><li><a href="https://www.cnblogs.com/likehua/tag/">更多</a></li>
+</ul>
+</div></div><div id="sidebar_categories">
+<div class="catListPostArchive">
+<h3 class="catListTitle">随笔档案</h3>
+
+<ul>
+
+<li><a id="CatList_LinkList_0_Link_0" href="https://www.cnblogs.com/likehua/archive/2018/11.html">2018年11月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_1" href="https://www.cnblogs.com/likehua/archive/2018/07.html">2018年7月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_2" href="https://www.cnblogs.com/likehua/archive/2017/02.html">2017年2月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_3" href="https://www.cnblogs.com/likehua/archive/2016/12.html">2016年12月 (3)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_4" href="https://www.cnblogs.com/likehua/archive/2016/09.html">2016年9月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_5" href="https://www.cnblogs.com/likehua/archive/2015/08.html">2015年8月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_6" href="https://www.cnblogs.com/likehua/archive/2015/06.html">2015年6月 (3)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_7" href="https://www.cnblogs.com/likehua/archive/2015/05.html">2015年5月 (6)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_8" href="https://www.cnblogs.com/likehua/archive/2015/04.html">2015年4月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_9" href="https://www.cnblogs.com/likehua/archive/2015/03.html">2015年3月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_10" href="https://www.cnblogs.com/likehua/archive/2015/01.html">2015年1月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_11" href="https://www.cnblogs.com/likehua/archive/2014/12.html">2014年12月 (10)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_12" href="https://www.cnblogs.com/likehua/archive/2014/11.html">2014年11月 (5)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_13" href="https://www.cnblogs.com/likehua/archive/2014/10.html">2014年10月 (28)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_14" href="https://www.cnblogs.com/likehua/archive/2014/09.html">2014年9月 (20)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_15" href="https://www.cnblogs.com/likehua/archive/2014/08.html">2014年8月 (7)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_16" href="https://www.cnblogs.com/likehua/archive/2014/07.html">2014年7月 (6)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_17" href="https://www.cnblogs.com/likehua/archive/2014/06.html">2014年6月 (15)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_18" href="https://www.cnblogs.com/likehua/archive/2014/04.html">2014年4月 (9)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_19" href="https://www.cnblogs.com/likehua/archive/2014/03.html">2014年3月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_20" href="https://www.cnblogs.com/likehua/archive/2014/02.html">2014年2月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_21" href="https://www.cnblogs.com/likehua/archive/2013/12.html">2013年12月 (5)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_22" href="https://www.cnblogs.com/likehua/archive/2013/10.html">2013年10月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_23" href="https://www.cnblogs.com/likehua/archive/2013/09.html">2013年9月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_24" href="https://www.cnblogs.com/likehua/archive/2013/08.html">2013年8月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_25" href="https://www.cnblogs.com/likehua/archive/2013/05.html">2013年5月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_26" href="https://www.cnblogs.com/likehua/archive/2013/04.html">2013年4月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_27" href="https://www.cnblogs.com/likehua/archive/2013/02.html">2013年2月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_28" href="https://www.cnblogs.com/likehua/archive/2013/01.html">2013年1月 (5)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_29" href="https://www.cnblogs.com/likehua/archive/2012/12.html">2012年12月 (7)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_30" href="https://www.cnblogs.com/likehua/archive/2012/11.html">2012年11月 (10)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_31" href="https://www.cnblogs.com/likehua/archive/2012/10.html">2012年10月 (5)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_32" href="https://www.cnblogs.com/likehua/archive/2012/06.html">2012年6月 (5)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_33" href="https://www.cnblogs.com/likehua/archive/2012/05.html">2012年5月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_34" href="https://www.cnblogs.com/likehua/archive/2012/04.html">2012年4月 (5)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_35" href="https://www.cnblogs.com/likehua/archive/2012/03.html">2012年3月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_36" href="https://www.cnblogs.com/likehua/archive/2012/02.html">2012年2月 (15)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_37" href="https://www.cnblogs.com/likehua/archive/2012/01.html">2012年1月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_38" href="https://www.cnblogs.com/likehua/archive/2011/12.html">2011年12月 (10)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_39" href="https://www.cnblogs.com/likehua/archive/2011/10.html">2011年10月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_40" href="https://www.cnblogs.com/likehua/archive/2011/09.html">2011年9月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_41" href="https://www.cnblogs.com/likehua/archive/2011/08.html">2011年8月 (7)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_42" href="https://www.cnblogs.com/likehua/archive/2011/07.html">2011年7月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_43" href="https://www.cnblogs.com/likehua/archive/2011/06.html">2011年6月 (5)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_44" href="https://www.cnblogs.com/likehua/archive/2011/05.html">2011年5月 (5)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_45" href="https://www.cnblogs.com/likehua/archive/2011/04.html">2011年4月 (7)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_46" href="https://www.cnblogs.com/likehua/archive/2011/03.html">2011年3月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_47" href="https://www.cnblogs.com/likehua/archive/2011/02.html">2011年2月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_48" href="https://www.cnblogs.com/likehua/archive/2011/01.html">2011年1月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_49" href="https://www.cnblogs.com/likehua/archive/2010/12.html">2010年12月 (1)</a> </li>
+
+</ul>
+
+</div>
+
+<div class="catList同学、老师的博客链接">
+<h3 class="catListTitle">好友链接</h3>
+
+</div>
+
+</div><div id="sidebar_recentcomments" class="sidebar-block"><div id="recent_comments_wrap">
+<div class="catListComment">
+<h3 class="catListTitle">最新评论</h3>
+
+	<div id="RecentCommentsBlock"><ul>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/likehua/p/3999588.html#4247248">1. Re:ZooKeeper系列3：ZooKeeper命令、命令行工具及简单操作</a></li>
+        <li class="recent_comment_body">@苏大强苏大强，你好啊...</li>
+        <li class="recent_comment_author">--懂得了才能做一些改变</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/likehua/p/3999588.html#4245423">2. Re:ZooKeeper系列3：ZooKeeper命令、命令行工具及简单操作</a></li>
+        <li class="recent_comment_body">@一颗向上的草莓我今天才用...</li>
+        <li class="recent_comment_author">--苏大强</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/likehua/p/3999538.html#4238217">3. Re:kafka入门：简介、使用场景、设计原理、主要配置及集群搭建（转）</a></li>
+        <li class="recent_comment_body">一字不落的都抄写过来来。牛皮</li>
+        <li class="recent_comment_author">--岳琳</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/likehua/archive/2011/05/23/2054320.html#4227217">4. Re:天地图切图Schema研究(转)</a></li>
+        <li class="recent_comment_body">你好，请问切图比例尺和分辨率是哪里得来的呢？有没有大于20层过后的比例呢？</li>
+        <li class="recent_comment_author">--不知道什么是昵称</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/likehua/p/3369823.html#4185822">5. Re:JVM调优总结 -Xms -Xmx -Xmn -Xss</a></li>
+        <li class="recent_comment_body">mark</li>
+        <li class="recent_comment_author">--Judith_123</li>
+</ul>
+</div>
+</div>
+</div></div><div id="sidebar_topviewedposts" class="sidebar-block"><div id="topview_posts_wrap">
+<div class="catListView">
+<h3 class="catListTitle">阅读排行榜</h3>
+	<div id="TopViewPostsBlock"><ul><li><a href="https://www.cnblogs.com/likehua/p/3999538.html">1. kafka入门：简介、使用场景、设计原理、主要配置及集群搭建（转）(608469)</a></li><li><a href="https://www.cnblogs.com/likehua/p/3999588.html">2. ZooKeeper系列3：ZooKeeper命令、命令行工具及简单操作(103617)</a></li><li><a href="https://www.cnblogs.com/likehua/p/3831331.html">3. 修改linux最大文件句柄数(65358)</a></li><li><a href="https://www.cnblogs.com/likehua/p/3369823.html">4. JVM调优总结 -Xms -Xmx -Xmn -Xss(63037)</a></li><li><a href="https://www.cnblogs.com/likehua/p/3968689.html">5. Zabbix监控windows部署安装(37768)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topcommentedposts" class="sidebar-block"><div id="topfeedback_posts_wrap">
+<div class="catListFeedback">
+<h3 class="catListTitle">评论排行榜</h3>
+	<div id="TopFeedbackPostsBlock"><ul><li><a href="https://www.cnblogs.com/likehua/p/3999538.html">1. kafka入门：简介、使用场景、设计原理、主要配置及集群搭建（转）(23)</a></li><li><a href="https://www.cnblogs.com/likehua/archive/2012/02/20/2359087.html">2. Lucene之IndexWriter、IndexReader保证唯一实例（备忘）(8)</a></li><li><a href="https://www.cnblogs.com/likehua/p/3571792.html">3. 管理员必备的Linux系统监控工具(8)</a></li><li><a href="https://www.cnblogs.com/likehua/archive/2012/06/29/2570388.html">4. Sqlite 多线程入库(7)</a></li><li><a href="https://www.cnblogs.com/likehua/p/3369823.html">5. JVM调优总结 -Xms -Xmx -Xmn -Xss(4)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topdiggedposts" class="sidebar-block"><div id="topdigg_posts_wrap">
+<h3 class="catListTitle">推荐排行榜</h3>
+<div class="RecentComment">
+	<div id="TopDiggPostsBlock"><ul><li><a href="https://www.cnblogs.com/likehua/p/3999538.html">1. kafka入门：简介、使用场景、设计原理、主要配置及集群搭建（转）(75)</a></li><li><a href="https://www.cnblogs.com/likehua/p/3369823.html">2. JVM调优总结 -Xms -Xmx -Xmn -Xss(7)</a></li><li><a href="https://www.cnblogs.com/likehua/p/3796849.html">3. Web基础架构：负载均衡和LVS(5)</a></li><li><a href="https://www.cnblogs.com/likehua/p/3825810.html">4. Hadoop 2.2.0部署安装（笔记，单机安装）(4)</a></li><li><a href="https://www.cnblogs.com/likehua/archive/2011/03/04/1970786.html">5. jsp servlet中的过滤器Filter配置总结(转)(4)</a></li></ul></div>
+</div></div></div></div><script type="text/javascript">loadBlogSideColumn();</script>
+			</div>
+			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	</div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer">
+		
+<!--done-->
+Copyright ©2019 李克华
+	</div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+
+
+<script type="text/javascript">var _clustrmaps = {'url' : 'http://www.cnblogs.com/likehua', 'user' : 997374, 'server' : '3', 'id' : 'clustrmaps-widget', 'version' : 1, 'date' : '2012-03-20', 'lang' : 'zh', 'corners' : 'square' };(function (){ var s = document.createElement('script'); s.type = 'text/javascript'; s.async = true; s.src = 'http://www3.clustrmaps.com/counter/map.js'; var x = document.getElementsByTagName('script')[0]; x.parentNode.insertBefore(s, x);})();</script><script type="text/javascript">getFollowStatus('5852238d-7c2e-df11-ba8f-001cf0cd104b')</script></body></html>

@@ -1,0 +1,31 @@
+Alt+Enter			快捷提示
+Ctrl+Alt+L		代码格式化
+Ctrl+d			复制当前行到下一行
+Ctrl+y			删除当前行
+ctrl+alt+v			返回值快速补全
+Ctrl+”+/-”		当前方法展开、折叠
+Ctrl+Shift+”+/-”		全部展开、折叠
+Ctrl + Alt + O		删除无用的import
+页面修改完成以后ctrl+f9：重新编译；
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+eclipse和idea快捷键对比 :
+https://blog.csdn.net/miao_9/article/details/64502553

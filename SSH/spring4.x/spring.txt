@@ -1,0 +1,921 @@
+2018/8/15 16:32
+	template	模板
+	frame		框架,结构
+	global		全局
+	layout		布局
+	
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	spring是开源的轻量级框架
+
+	spring核心主要两部分：
+	（1）aop：面向切面编程，扩展功能不是修改源代码实现
+	（2）ioc：控制反转，
+		- 比如有一个类，在类里面有方法（不是静态的方法），调用类里面的方法，创建类的对象，使用对象调用方法，创建类对象的过程，需要new出来对象
+		- 把对象的创建不是通过new方式实现，而是交给spring配置创建类对象
+
+	spring是一站式框架
+	（1）spring在javaee三层结构中，每一层都提供不同的解决技术
+		- web层：springMVC
+		- service层：spring的ioc
+		- dao层：spring的jdbcTemplate
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+2018/8/20 9:46
+
+	spring的ioc
+		1 底层原理
+			xml配置文件(路径/类名)->dom4j解析配置文件->根据解析内容通过 反射 得到实体类对象(工厂模式)
+			
+		2 实现步骤
+		    <1> ioc的配置文件方式
+
+			(1)导入jar包
+				解压资料zip文件:spring中jar包有个特点->每类jar包都有三个,实际导入第一个就行
+				基本需要四个核心jar包:
+					spring-beans.jar
+					spring-context.jar
+					spring-core.jar		
+					spring-expression.jar
+				还有日志jar包:
+					commons-logging.jar		
+					log4j.jar
+
+			(2)创建类，在类里面创建方法
+				public class Bean3 {
+					public void add() {
+						System.out.println("bean2.........");
+					}
+				}
+
+			(3)第三步 创建spring配置文件，配置创建类
+				1-> spring核心配置文件名称和位置不是固定的
+					- 建议放到src下面，官方建议applicationContext.xml
+				2-> 引入schema约束(在docs->Spring-framework-referenc->html->xsd-configuration中)
+					<?xml version="1.0" encoding="UTF-8"?>
+					<beans xmlns="http://www.springframework.org/schema/beans"
+   					       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  					       xsi:schemaLocation="
+      						 	 http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    					      	<!-- bean definitions here -->
+
+					</beans>
+				3-> 配置对象创建(在beans标签内)
+					<bean id="bean3" class="cn.itcast.ioc.User" scope="prototype">
+					</bean>
+
+			(4)写代码测试对象创建	
+				//这段代码只是在测试使用
+				@Test
+				public void testUser() {
+					//1 加载spring配置文件，根据创建对象
+					ApplicationContext context = 
+						new ClassPathXmlApplicationContext("bean1.xml");
+					//2 得到配置创建的对象
+					//  通过bean标签id值获取
+					Bean3 bean3 = (Bean3) context.getBean("bean3");
+					System.out.println(bean3);
+					beans.add();
+				}
+
+		    <2> ioc的注解方式
+
+********************************************************************************************************************************************************************************************
+			
+	Spring的bean管理（xml方式）
+
+		Bean实例化的方式
+			第一种 使用实体类的无参数构造创建（**重点**）
+				<bean id="user" class="cn.itcast.ioc.User" scope="prototype">
+				</bean>
+				如果之后有参构造,没有无参构造,会报如下错:
+					No default constructor found
+
+			第二种 使用静态工厂创建(工厂方法是static)
+				（1）创建静态的方法，返回类对象
+					public class Bean2Factory {
+						//静态的方法，返回Bean2对象
+						public static Bean2 getBean2() {
+							return new Bean2();
+						}
+					}
+				(2)xml中配置
+					<!-- 使用静态工厂创建对象 -->
+					<!-- factory-method:工厂中的静态方法 -->
+					<bean id="bean2" class="cn.itcast.bean.Bean2Factory" factory-method="getBean2"></bean>
+
+			第三种 使用实例工厂创建(方法不是静态的)
+				（1）创建不是静态的方法，返回类对象
+					public class Bean3 {
+						public void add() {
+							System.out.println("bean2.........");
+						}
+					}
+				(2)xml配置
+					<!-- 使用实例工厂创建对象 -->
+					<!-- 创建工厂对象 -->
+					<bean id="bean3Factory" class="cn.itcast.bean.Bean3Factory"></bean>
+					<bean id="bean3" factory-bean="bean3Factory" factory-method="getBean3"></bean>
+
+
+		Bean标签常用属性
+			（1）id属性：起名称，id属性值名称任意命名
+				- id属性值，不能包含特殊符号
+				- 根据id值得到配置对象
+			（2）class属性：创建对象所在类的全路径
+			（3）scope属性
+				- singleton：默认值，单例 
+				- prototype：多例
+				- request：创建对象把对象放到request域里面
+				- session：创建对象把对象放到session域里面
+				- globalSession：创建对象把对象放到globalSession里面
+
+
+********************************************************************************************************************************************************************************************
+
+	属性注入(类中成员变量)
+		属性注入:创建对象时候，向类里面属性里面设置值
+
+		属性注入的方式介绍（三种方式）
+			（1）使用set方法注入
+			（2）使用有参数构造注入
+			（3）使用接口注入
+
+		在spring框架里面，支持前两种方式
+			（1）有参数构造注入
+				代码:
+					public class PropertyDemo1 {
+						private String username;
+						public PropertyDemo1(String username) {
+							this.username = username;
+						}
+
+						public void test1() {
+							System.out.println("demo1.........."+username);
+						}
+					}
+
+				xml配置:
+					<!-- 使用有参数构造注入属性 -->
+					<bean id="demo" class="cn.itcast.property.PropertyDemo1"> -->
+						<!-- 使用有参构造注入 
+							constructor-arg:类里面定义的属性名称
+							value:设置具体值
+						-->
+						<constructor-arg name="username" value="小王小马"></constructor-arg>
+					</bean>
+}
+			（2）set方法注入（重点）
+				代码:
+					private String bookname;
+					//set方法
+					public void setBookname(String bookname) {
+						this.bookname = bookname;
+					}
+					
+				
+				xml配置:
+					方式一:	
+					<!-- 使用set方法注入属性 -->(**重点**)
+					<bean id="book" class="cn.itcast.property.Book"> -->
+						<!-- 注入属性值 
+							name属性值：类里面定义的属性名称
+							value属性：设置具体的值
+						-->
+						<property name="bookname" value="易筋经"></property>
+					</bean>
+					方式二:
+					beans标签内加入属性:xmlns:p="http://www.springframework.org/schema/p"
+					beans标签内加入子标签:
+						<bean id="book" class="cn.itcast.property.Person" p:bookname="易筋经"></bean>
+
+********************************************************************************************************************************************************************************************
+
+	注入复杂类型属性
+		第一步 创建实体类,定义成员变量数组arrs,List数组list,Map集合map,Properties类型properties;创建这几个成员变量的set方法
+
+		第二步 xml配置
+		<!-- 注入复杂类型属性值 -->
+		<bean id="person" class="cn.itcast.property.Person">
+			<!-- 数组类型 -->
+			<property name="arrs">
+				<list>
+					<value>小王</value>
+					<value>小马</value>
+					<value>小宋</value>
+				</list>
+			</property>
+		
+			<!-- list集合 -->
+			<property name="list">
+				<list>
+					<value>小奥</value>
+					<value>小金</value>
+					<value>小普</value>
+				</list>			
+			</property>
+		
+			<!-- map集合 -->
+			<property name="map">
+				<map>
+					<entry key="aa" value="lucy"></entry>
+					<entry key="bb" value="mary"></entry>
+					<entry key="cc" value="tom"></entry>
+				</map>
+			</property>
+		
+			<!-- properties类型 -->
+			<property name="properties">
+				<props>
+					<prop key="driverclass">com.mysql.jdbc.Driver</prop>
+					<prop key="username">root</prop>
+				</props>
+			</property>
+		</bean>
+
+********************************************************************************************************************************************************************************************
+
+	对象类型注入(**重点**)
+		1 创建service类和dao类
+			（1）在service得到dao对象(不通过new出来)
+		2 具体实现过程
+			（1）在service里面把dao作为类型属性
+			（2）生成dao类型属性的set方法
+				//1 定义dao类型属性
+				private UserDao userDao;
+				//2 生成set方法
+				public void setUserDao(UserDao userDao) {
+					this.userDao = userDao;
+				}
+			（3）配置文件中注入关系
+				<!-- 注入对象类型属性 -->
+				<!-- 1 配置service和dao对象 -->
+				<!-- <bean id="userDao" class="cn.itcast.ioc.UserDao"></bean> -->
+	
+				<bean id="userService" class="cn.itcast.ioc.UserService"> -->
+					<!-- 注入dao对象 
+						name属性值：service类里面属性名称
+			                                       现在不要写value属性，因为刚才是字符串，现在是对象
+						写ref属性：dao配置bean标签中id值
+					-->
+					<property name="userDao" ref="userDao"></property>
+				</bean>
+
+··························································································
+	IOC和DI的区别
+		（1）IOC: 控制反转，把对象创建交给spring进行配置
+		（2）DI: 依赖注入，向类里面的属性中设置值
+
+		（3）关系：依赖注入不能单独存在，需要在ioc基础之上完成操作
+
+···························································································
+
+	Spring整合web原理
+		1 加载spring核心配置文件，
+			//1 加载spring配置文件，根据创建对象
+			ApplicationContext context = new ClassPathXmlApplicationContext("bean1.xml");
+		（1）new对象，功能可以实现，效率很低
+
+		2 实现思想：把加载配置文件和创建对象过程，在服务器启动时候完成
+
+		3 实现原理
+			（1）ServletContext对象
+			（2）监听器
+
+			（3）具体使用：
+				- 在服务器启动时候，为每个项目创建一个ServletContext对象
+				- 在ServletContext对象创建时候，使用监听器可以具体到ServletContext对象在什么时候创建
+				- 使用监听器监听到ServletContext对象创建时候，
+					-- 加载spring配置文件，把配置文件配置对象创建
+					-- 把创建出来的对象放到ServletContext域对象里面（setAttribute方法）
+				- 获取对象时候，到ServletContext域得到 （getAttribute方法）
+
+
+
+********************************************************************************************************************************************************************************************
+
+2018/8/21 10:10
+
+
+	Spring的bean管理（注解）
+	     介绍:
+		1 代码里面特殊标记，使用注解可以完成功能
+		2 注解写法--@注解名称(属性名称=属性值)
+		3 注解使用在类上面，方法上面 和 属性上面
+
+	     实现步骤:
+		1 导入jar包(基本jar包 和 注解jar包)
+		     基本jar包:
+			spring-beans.jar
+			spring-context.jar
+			spring-core.jar		
+			spring-expression.jar
+			commons-logging.jar		
+			log4j.jar
+		     注解jar包:
+			spring-aop-4.2.4.jar
+
+		2 创建类 创建方法
+		
+		3 床架spring配置文件,引入约束
+			(1)第一天做ioc基本功能,引入约束beans
+			(2)做spring的ioc注解开发,引入新的约束context(schemaLocation属性中)
+				<?xml version="1.0" encoding="UTF-8"?>
+				<beans xmlns="http://www.springframework.org/schema/beans"
+   					xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  					xsi:schemaLocation="
+      						http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+						http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    		
+				</beans>	
+		
+		4 开启注解扫描
+			<!-- 开启注解扫描 
+				(1)到包里面扫描类、方法、属性上面是否有注解
+				(2)base-package:如下,会扫描所有cn.itcast包,包括子包(cn.itcast.entry;cn.itcast.person等等叫做子包)
+			-->
+			<context:component-scan base-package="cn.itcast"></context:component-scan>
+	
+			<!-- 
+				扫描属性上面的注解(一般不用,直接用上面那种,写这个是为了说,开发可以有不同的选择)
+			 -->
+			<!-- <context:annotation-config></context:annotation-config> -->
+			
+·····························································································
+	注解创建对象
+		1 在创建对象的类上面使用注解实现
+			类上边写注解:@Conponent(value="user")
+			相当于xml配置中的:<bean id="user" class="...."/>
+
+		2 创建对象有四个注解
+			（1）@Component
+			（2）@Controller	:web层
+			（3）@Service		:业务层
+			（4）@Repository	:持久层
+			目前这四个注解功能是一样的，都创建对象
+
+		3 创建对象是单实例还是多实例
+			@Scope(value="")
+			不写这个属性默认是单实例
+			具体见上面的:Bean标签常用属性知识点
+······························································································
+
+	注解注入属性
+		1 目标:创建service类,创建到类,在service得到对象
+		2 创建dao和service对象(并注解创建对象)
+		3 在service类里面定义dao类型属性(两个注解都可以实现)
+		     *使用注解方式时候不需要set方法*
+			第一个注解方式:
+				//得到dao对象
+				//1 定义dao类型属性
+				//在dao属性上面使用注解 完成对象注入
+				@Autowired
+				private UserDao userDao;
+	
+			第二个注解方式:(更直观)
+				// name属性值 写 注解创建dao对象 value值
+				@Resource(name="userDao")
+				private UserDao userDao;
+		
+	配置文件和注解混合使用(一般习惯)
+		1 创建对象操作使用配置文件方式实现
+		2 注入属性的操作使用注解方式实现
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ********************************************************************************************************************************************************************************************                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             Spring的aop操作(方法功能的增强)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+		1 在spring里面进行aop操作，使用aspectj实现
+			（1）aspectj不是spring一部分，和spring一起使用进行aop操作
+			（2）Spring2.0以后新增了对AspectJ支持
+
+		2 使用aspectj实现aop有两种方式
+			（1）基于aspectj的xml配置
+			（2）基于aspectj的注解方式                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              使用aop需要的jar包和xml配置:
+			1 除了导入基本的jar包之外,还需要导入aop相关的jar包
+				aopalliance.jar		
+				aspectjweaver.jar	
+				spring-aop.jar
+				spring-aspects.jar
+			2 创建核心配置文件,导入aop的约束
+				beans标签内属性加入这个:
+					xsi:schemaLocation="http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+	使用表达式配置切入点
+		1 切入点：实际增强的方法
+
+		2 常用的表达式
+			格式:execution(<访问修饰符>?<返回类型><方法名>(<参数>)<异常>)
+			
+			（1）execution(* cn.itcast.aop.Book.add(..))---->*表示任意修饰;cn.itcast.aop.book类中的add(..)方法增强;add(..)中两个..表示任意参数
+			（2）execution(* cn.itcast.aop.Book.*(..))---->book类中的所有方法
+			（3）execution(* *.*(..))---->所有类中的所有方法
+			（4） 匹配所有save开头的方法 execution(* save*(..))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+
+**********************************************************************************************************************************************************************************************
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 	Aspectj的aop操作(xml配置)
+		目标: 执行cn.itcast.aop.Book中的add()时,默认先执行MyBook中的增强方法
+ 
+		xml配置(beans标签内):      
+			<!-- 1  配置对象 -->
+			<bean id="book" class="cn.itcast.aop.Book"></bean>
+			<bean id="myBook" class="cn.itcast.aop.MyBook"></bean>
+	
+			<!-- 2 配置aop操作 -->
+			<aop:config>
+				<!-- 2.1 配置切入点 -->
+				<aop:pointcut expression="execution(* cn.itcast.aop.Book.*(..))" id="pointcut1"/>
+		
+				<!-- 2.2 配置切面 
+					把增强用到方法上面
+				-->
+				<aop:aspect ref="myBook">
+					<!-- 配置增强类型 
+						method： 增强类里面使用哪个方法作为前置
+						
+						before : 前增强
+						after-returning : 后增强
+						around : 环绕增强
+					-->
+					<aop:before method="before1" pointcut-ref="pointcut1"/>
+			
+					<aop:after-returning method="after1" pointcut-ref="pointcut1"/>
+			
+					<aop:around method="around1" pointcut-ref="pointcut1"/>
+				</aop:aspect>
+			</aop:config>     
+	
+		环绕增强的实体类方法:
+			//环绕通知
+			//参数ProceedingJoinPoint会默认调用被增强的方法执行
+			public void around1(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
+				//方法之前
+				System.out.println("方法之前.....");
+		
+				//执行被增强的方法
+				proceedingJoinPoint.proceed();
+		
+				//方法之后
+				System.out.println("方法之后.....");
+			}
+
+*********************************************************************************************************************************************************************************************
+
+	log4j日志
+		1 通过log4j可以看到程序运行过程中更详细的信息
+			（1）经常使用log4j查看日志
+
+		2 使用
+			（1）导入log4j的jar包
+				log4j.jar
+				commons-logging.jar
+			（2）复制log4j的配置文件，复制到src下面(资料里面有)
+				log4j.properties
+
+		3 设置日志级别
+			log4j.rootLogger=info,stdout
+			（1）info：看到基本信息
+			（2）debug：看到更详细信息	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+**********************************************************************************************************************************************************************************************
+	
+	服务器启动时加载配置文件
+		问题: Web项目中,没次访问action都会加载一次spring配置文件
+		
+		解决:
+			（1）在服务器启动时候，创建对象加载配置文件
+			（2）底层使用监听器、ServletContext对象       
+
+		实现步骤:(配置一个spring已经封装好的监听器)
+			（1）配置监听器之前做事情：导入spring整合web项目jar包
+				spring-web.jar
+			（2）封装了一个监听器，只需要 配置监听器 就可以了 
+				<!-- 配置监听器 -->
+    				<listener>
+    					<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+  				</listener>
+    
+  				<!-- 指定spring配置文件位置 -->
+  				<context-param>
+  					<param-name>contextConfigLocation</param-name>
+  					<param-value>classpath:bean1.xml</param-value>
+  				</context-param>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+				注意:默认到WEB-INF下面找applicationContext.xml文件,实际我们不是放到这个路径也不叫这个名称,所以需要自己配置路径                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+
+
+**********************************************************************************************************************************************************************************************                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    2018/8/22 9:00
+	
+	基于aspectj的注解aop(注解)
+		1 创建对象
+			<bean id="book" class="cn.itcast.aop.Book"></bean>
+			<bean id="myBook" class="cn.itcast.aop.MyBook"></bean>
+
+		2 在spring核心配置文件中,开启aop操作
+			<!-- 开启aop自动解析注解操作 -->
+			<aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+
+		3 在增强类上面使用注解完成aop操作
+			@Aspect
+			public class MyBook {
+				//在方法上面使用注解完成增强配置
+				@Before(value="execution(* cn.itcast.aop.Book.*(..))")
+				public void before() {
+					System.out.println("before.......");
+				}
+			}
+
+			补充:
+				@Before		:前置通知
+				@AfterReturing	:后置通知
+				@Around		:环绕通知
+				@After		:最终通知
+				@AfterThrowing	:异常抛出通知
+
+
+*********************************************************************************************************************************************************************************************
+
+	spring的jdbcTemplate操作
+		使用jdbcTemplate准备工作
+			所需jar包:
+				Spring-jdbc.jar
+				spring-tx.jar
+			所需数据库jar包:
+				mysql-connect.jar
+
+
+		增:
+			1 创建对象,设置数据库信息
+			2 创建jdbcTemplate对象,设置数据源
+			3 调用jdbcTemplate对象里面的方法实现操作
+			代码:
+				// 1 添加操作
+				@Test
+				public void add() {
+					// 设置数据库信息
+					DriverManagerDataSource dataSource = new DriverManagerDataSource();
+					dataSource.setDriverClassName("com.mysql.jdbc.Driver");
+					dataSource.setUrl("jdbc:mysql:///spring_day03");
+					dataSource.setUsername("root");
+					dataSource.setPassword("root");
+
+					// 创建jdbcTemplate对象，设置数据源
+					JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+					// 调用jdbcTemplate对象里面的方法实现操作
+					// 创建sql语句
+					String sql = "insert into user values(?,?)";
+					int rows = jdbcTemplate.update(sql, "lucy", "250");
+					System.out.println(rows);
+				}
+
+		删:
+			代码:
+				//1 设置数据库信息
+				//2 创建jdbcTemplate对象,设置数据源
+				//3 调用update方法实现删除
+				String sql = "delete from user where username=?";
+				int rows = jdbcTemplate.update(sql, "lucy");
+				System.out.println(rows);
+		
+		改:
+			代码:
+				//1 设置数据库信息
+				//2 创建jdbcTemplate对象,设置数据源
+				//3 调用jdbcTemplate里面的方法实现 update方法
+				String sql = "update user set password=? where username=?";
+				int rows = jdbcTemplate.update(sql, "1314", "lucy");
+				System.out.println(rows);
+		
+		查:
+		     dbutils和jdbcTemplate对比:
+			/*
+			 * QueryRunner runner = new QueryRuner(datasource); 返回对象 runner.query(sql,new
+			 * BeanHandler<User>(User.class));
+			 * 
+			 * 返回list集合 runner.query(sql,new BeanListHander<User>(User.class))
+			 * 
+			 * 1 在dbutils时候，有接口 ResultSetHandler dbutils提供了针对不同的结果实现类
+			 * 
+			 * 2 jdbcTemplate实现查询，有接口 RowMapper，
+			 * jdbcTemplate针对这个接口没有提供实现类，得到不同的类型数据需要自己进行数据封装
+			 * 
+			 */
+			web阶段写过的jdbc代码:(也是jdbcTemplate底层代码)
+				// jdbc实现代码
+				@Test
+				public void testJDBC() {
+					Connection conn = null;
+					PreparedStatement psmt = null;
+					ResultSet rs = null;
+					//加载驱动
+					try {
+						Class.forName("com.mysql.jdbc.Driver");
+						//创建连接
+						conn = DriverManager.getConnection("jdbc:mysql:///spring_day03", "root", "root");
+						//编写sql语句
+						String sql = "select * from user where username=?";
+						//预编译sql
+						psmt = conn.prepareStatement(sql);
+						//设置参数值
+						psmt.setString(1, "lucy");
+						//执行sql
+						rs = psmt.executeQuery();
+						//遍历结果集
+						while(rs.next()) {
+							//得到返回结果值
+							String username = rs.getString("username");
+							String password = rs.getString("password");
+							//放到user对象里面
+							User user = new User();
+							user.setUsername(username);
+							user.setPassword(password);
+				
+							System.out.println(user);
+						}
+			
+					} catch (Exception e) {
+						e.printStackTrace();
+					} finally {
+						try {
+							rs.close();
+							psmt.close();
+							conn.close();
+						} catch (SQLException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+
+**********************************************************************************************************************************************************************************************
+
+		    jdbcTemplate代码:
+			(1)查询返回某一个值
+				//1 设置数据库信息
+				//2 创建jdbcTemplate对象,设置数据源
+				//3 调用方法得到记录数
+					//第一个参数是sql语句
+					//第二个参数是 返回类型的class,比如Integer.class、String.class等
+				String sql = "select count(*) from user";
+				//调用jdbcTemplate的方法
+				int count = jdbcTemplate.queryForObject(sql, Integer.class);
+				System.out.println(count);
+				
+			(2)查询返回一个对象
+				//1 设置数据库信息
+				//2 创建jdbcTemplate对象,设置数据源
+				//写sql语句，根据username查询
+				String sql = "select * from user where username=?";
+				//调用jdbcTemplate的方法实现
+					//第一个参数是sql语句
+					//第二个参数是接口 RowMapper(相当于dbutils里面的接口)，需要自己写类实现接口，自己做数据封装
+					//第三个参数是 可变参数(sql语句中 ? 号值)
+				User user = jdbcTemplate.queryForObject(sql, new MyRowMapper(), "mary");
+				System.out.println(user);
+				
+				自己实现MyRowMapper接口代码:(也可以下一个匿名内部类)
+					class MyRowMapper implements RowMapper<User> {
+						@Override
+						public User mapRow(ResultSet rs, int num) throws SQLException {
+							// 1 从结果集里面把数据得到
+							String username = rs.getString("username");
+							String password = rs.getString("password");
+		
+							// 2 把得到数据封装到对象里面
+							User user = new User();
+							user.setUsername(username);
+							user.setPassword(password);
+		
+							return user;
+						}
+	
+					}
+
+			(3)查询返回一个list集合
+				//1 设置数据库信息
+				//2 创建jdbcTemplate对象,设置数据源
+				//3 写sql语句
+				String sql = "select * from user";
+				//调用jdbcTemplate的方法实现
+				List<User> list = jdbcTemplate.query(sql,new MyRowMapper());
+				System.out.println(list);
+				
+				自己实现MyRowMapper接口代码:
+					见上一个知识点
+
+
+*********************************************************************************************************************************************************************************************
+
+	Spring配置c3p0连接池和dao使用jdbcTemplate
+	
+		第一步:连接配置
+		c3p0连接池代码:
+			ComboPooledDataSource dataSource = new ComboPooledDataSource();
+			dataSource.setDriverClass("com.mysql.jdbc.Driver");
+			dataSource.setJdbcUrl("jdbc:mysql:///spring_day03");
+			dataSource.setUser("root");
+			dataSource.setPassword("root");
+		c3p0代码配置到spring配置文件中连接:(不用写代码,配置文件实现)
+			<!-- 配置c3p0连接池 -->
+			<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+				<!-- 注入属性值 -->
+				<property name="driverClass" value="com.mysql.jdbc.Driver"></property>
+				<property name="jdbcUrl" value="jdbc:mysql:///spring_day03"></property>
+				<property name="user" value="root"></property>
+				<property name="password" value="root"></property>
+			</bean>
+
+		第二步:dao使用jdbcTemplate
+			 spring配置文件xml配置:
+				<!-- 创建service和dao对象，在service注入dao对象 -->
+				<bean id="userService" class="cn.itcast.c3p0.UserService">
+					<!-- 注入dao对象 -->
+					<!-- name:类中成员变量的名字
+					     ref:bean标签中id的名字
+					 -->
+					<property name="userDao" ref="userDao"></property>
+				</bean>
+					
+				<!-- dao中注入jdbcTemplate对象;需要在dao的实体类中创建jdbcTemplate成员变量和对应set方法 -->
+				<bean id="userDao" class="cn.itcast.c3p0.UserDao">
+					<!-- 注入jdbcTemplate对象 -->
+					<property name="jdbcTemplate" ref="jdbcTemplate"></property>
+				</bean>
+
+				
+				<!-- 创建jdbcTemplate对象,注入dataSource对象;因为在jdbcTemplate底层有dataSource成员变量和对应的set方法,所以直接注入就可以 -->
+				<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+					<!-- 把dataSource传递到模板对象里面 -->
+					<property name="dataSource" ref="dataSource"></property>
+				</bean>
+			对应实体类:
+				UserService类:userDao成员变量和对应set方法;add()方法:userDao调用UserDao类中的add()方法
+				UserDao类:jdbcTemplate成员变量和对应的set方法;add()方法:sql语句字符串,jdbcTemplate调用update(sql,"李磊","520")方法
+				TestService类:testDemo()方法:ApplicationContext context = new ClassPathXmlApplicationContext("bean1.xml");
+							     UserService service = (UserService) context.getBean("userService");
+							     service.add();
+
+
+
+**********************************************************************************************************************************************************************************************
+
+	Spring的事务管理
+		一 概述
+			1 spring事务管理两种方式
+				第一种 编程式事务管理（不用）
+				第二种 声明式事务管理
+					（1）基于xml配置文件实现
+					（2）基于注解实现
+			2 spring事务管理的api介绍
+				接口:PlatformTransactionManager--事务管理器
+				（1）spring针对不同的dao层框架，提供接口不同的实现类
+					org.springframework.jdbc.datasource.DataSourceTransactionManager 
+						使用 Spring JDBC 或 MyBatis 进行持久化数据时使用
+					org.springframework.orm.hibernate3.HibernateTransactionManager 
+						使用 Hibernate 版本进行持久化数据时使用
+				（2）首先 配置事务管理器
+
+		二 实操
+		    *搭建转账环境*
+			
+			1 创建数据库表，添加数据
+				id	username	salary
+				1	小王		10000
+				2	小马		10000
+			
+			2 创建service和dao类，完成注入关系;配置beans标签中的schemaLocation属性,在老师准备的包中直接复制多来
+				<bean id="ordersService" class="cn.itcast.service.OrdersService">
+					<property name="ordersDao" ref="ordersDao"></property>
+				</bean>
+				<bean id="ordersDao" class="cn.itcast.dao.OrdersDao">
+					<property name="jdbcTemplate" ref="jdbcTemplate"></property>
+				</bean>
+				<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+					<property name="dataSource" ref="dataSource"></property>
+				</bean>
+
+			3 代码
+				（1）service层又叫业务逻辑层 
+				（2）dao层，单纯对数据库操作层，在dao层不添加业务
+				（3）需求：小王 转账 1000 给 小马
+					- 小王少1000
+					- 小马多1000
+				
+				OrderDao类中:
+					//注入jdbcTemplate
+					private JdbcTemplate jdbcTemplate;
+					public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
+						this.jdbcTemplate = jdbcTemplate;
+					}
+
+					//小王少钱的方法
+					public void lessMoney() {
+						String sql = "update account set salary=salary-? where username=?";
+						jdbcTemplate.update(sql, 1000,"小王");
+					}
+	
+					//小马多钱的方法
+					public void moreMoney() {
+						String sql = "update account set salary=salary+? where username=?";
+						jdbcTemplate.update(sql, 1000,"小马");
+					}
+				OrderService类中:
+					//注入ordersDao
+					private OrdersDao ordersDao;
+					public void setOrdersDao(OrdersDao ordersDao) {
+						this.ordersDao = ordersDao;
+					}
+
+					//调用dao的方法
+					//业务逻辑层，写转账业务
+					public void accountMoney() {
+						//小王少1000
+						ordersDao.lessMoney();
+		
+						//小马多1000
+						ordersDao.moreMoney();
+					}
+				TestService类中:
+					@Test
+					public void testDemo() {
+						ApplicationContext context = 
+							new ClassPathXmlApplicationContext("bean1.xml");
+						OrdersService service = (OrdersService) context.getBean("ordersService");
+						service.accountMoney();
+					}
+			
+			3 产生问题：
+				（1）如果小王少了1000之后，出现异常，小马不会多1000，钱丢失了
+
+			4 解决：
+				（1）添加事务解决，出现异常进行回滚操作
+				（2）具体操作:声明事务管理之后可以解决,见下面知识点
+			
+			
+		    声明式事务管理（xml配置）
+			1 配置事务管理器
+				<!-- 第一步 配置事务管理器 -->
+				<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+					<!-- 注入dataSource -->
+					<property name="dataSource" ref="dataSource"></property>
+				</bean>
+			2 配置事务增强
+				<!-- 第二步 配置事务增强 -->
+				<tx:advice id="txadvice" transaction-manager="transactionManager">
+					<!-- 做事务操作 -->
+					<tx:attributes>
+						<!-- 设置进行事务操作的方法匹配规则  
+							所有account开头的方法都会事务管理
+						-->
+						<tx:method name="account*" propagation="REQUIRED"/>
+					</tx:attributes>
+				</tx:advice>
+			3 配置切面
+				<!-- 第三步 配置切面 -->
+				<aop:config>
+					<!-- 切入点 -->
+					<aop:pointcut expression="execution(* cn.itcast.service.OrdersService.*(..))" id="pointcut1"/>
+					<!-- 切面 -->
+					<!-- txadvice增强用在pointcut1切入点上 -->
+					<aop:advisor advice-ref="txadvice" pointcut-ref="pointcut1"/>
+				</aop:config>
+
+			
+		    声明式事务管理（注解）
+			1 配置事务管理器
+				<!-- 第一步配置事务管理器 -->
+				<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+					<property name="dataSource" ref="dataSource"></property>
+				</bean>
+			2 配置事务注解扫描 
+				<!-- 第二步 开启事务注解扫描 -->
+				<tx:annotation-driven transaction-manager="transactionManager"/>
+			3 在要使用事务的方法所在类上面添加注解
+				//有注解的类,类里面的所有方法都加事务管理
+				@Transactional
+				public class OrdersService() { }
+
+		
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

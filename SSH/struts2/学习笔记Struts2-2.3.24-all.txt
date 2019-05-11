@@ -1,0 +1,800 @@
+2018/7/30 15:34
+	blank	空白的
+	label	标注
+
+********************************************************************************************************************************************************************************************
+	
+	环境搭建步骤:
+		一.创建web项目,导入jar包
+			寻找jar包:资料中->Struts-2.3.24->apps->blank项目->lib中的所有jar包都是必须的
+		二.创建action
+			public class HelloAction {
+				/*
+				 * (1)每次访问servlet时候,都会执行service方法
+				 *
+				 * (2)访问action,每次action时候,默认执行execute方法
+				 **/
+				public String execute() {
+					return "ok";
+				}
+			}
+		三.配置action的访问路径
+			(1)创建Struts核心配置文件
+				-核心配置文件名称和位置是固定的
+				-位置必须在src下面,名称必须是struts.xml
+			(2)引入dtd约束
+				<!DOCTYPE struts PUBLIC
+					"-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+					"http://struts.apache.org/dtds/struts-2.3.dtd">
+			(3)action配置
+			<struts>
+				<package name="hellodemo" extends="struts-default" namespace="/">
+					<!-- name: 访问名称 -->
+					<action name="hello" class="cn.itcast.action.HelloAction">
+						<!-- 配置方法的返回值到页面 -->
+						<result name="ok">/hello.jsp</result>
+					</action>
+				</package>
+			</struts>
+			浏览器访问路径:http://127.0.0.1:8080/struts_day01/hello.action
+		四.配置struts2过滤器
+			web.xml中配置:
+				<filter>
+      				 	 <filter-name>struts2</filter-name>
+    					 <filter-class>org.apache.struts2.dispatcher.ng.filter.StrutsPrepareAndExecuteFilter</filter-class>
+  			  	</filter>
+
+ 			  	<filter-mapping>
+      				  	 <filter-name>struts2</filter-name>
+    				 	 <url-pattern>/*</url-pattern>          //允许所有路径
+ 			  	</filter-mapping>
+
+********************************************************************************************************************************************************************************************
+
+2018/7/31 10:20
+
+
+	Struts2基本执行过程:
+		见文件夹外图片
+	
+	Struts2源代码(过滤器)-StrutsPrepareAndExecuteFilter
+		1 过滤器在服务器启动时候创建，创建过滤器时候执行init方法
+		（1）在init方法中主要加载配置文件
+		- 包含自己创建的配置文件和struts2自带配置文件
+		** struts.xml
+		** web.xml
+
+********************************************************************************************************************************************************************************************
+		
+	Struts2配置(xml文件标签)
+		package标签
+			-name属性
+				>name属性值功能本身没有关系的
+				>在一个配置文件中可以写多个package标签,name属性值不能相同
+			-extends属性
+				>属相值是固定的,struts-default
+				>写了这个属性后,在package里面配置的类有action属性
+			-namespace属性
+				>namespace属性值和action标签里面的name属性值构成访问路径	
+
+		action标签
+			-name标签
+				>namespace属性值和action标签里面的name属性值构成访问路径
+				>在package标签里面写多个action,但是action的name属性值不能相同的
+			-class属性
+				>action全路径
+			-method属性
+				>比如namespace属性值和action标签里面的name属性值构成访问路径
+				>让action里面多个方法执行，使用method进行配置
+		
+		result标签
+			-name属性
+				>和方法返回值一样
+			-type属性
+				>配置如何到路径中(转发或者重定向)
+				>type属性默认值:转发操作
+					1.针对jsp页面
+					>dispatcher-默认值(转发操作)
+					>redirect-重定向
+					2.针对action页面
+					>chain-转发到action,一般不用,缓冲问题
+					>redirectAction-重定向到action
+
+
+	Struts2常量配置
+		1 struts2框架，帮我们实现一部分功能，struts2里面有常量，在常量里面封装一部分功能
+
+		2 struts2默认的常量位置（记住）
+			-路径:lib->struts2-core-2.3.24.jar->org->apache->struts2->views->default.properties
+
+		3 修改struts2默认常量值
+			（1）常用的方式
+				- 在struts.xml中进行配置(strtus标签下)
+					<constant name="struts.i18n.encoding" value="UTF-8"></constant>
+			（2）还有两种方式（了解）
+				- 在src下面创建 struts.properties，进行修改
+				- 在web.xml进行配置
+
+
+	分模块开发
+		应用背景:多个人不同地点协同开发一个项目
+		
+		*每个人单独写配置文件,把配置文件引入到核心配置文件struts.xml中
+		->个人文件中:位置名称随便,xml文件中所有内容必须全都有
+		->核心配置文件中:通过标签引用
+			<include file="路径:相对于struts.xml核心文件的路径"></include>
+
+********************************************************************************************************************************************************************************************
+
+	action的编写方式(三种)
+		1.创建普通类,这个不继承任何类,不实现任何接口
+		2.创建类,实现接口action(接口导包是xwork包)
+			>接口里边只有一个方法execute()
+			>接口中提供一些静态常量值,可以在execute方法中return返回直接使用
+		3.创建类,继承类ActionSupport(**最常用**)
+			>ActionSupport已经实现了action接口
+			>也可以使用那些常量
+	
+
+
+	访问action里边特定方法的方法(**重*点**)
+		第一种 使用action标签的method属性，在这个属性里面写执行的action的方法
+			配置文件中->action标签内->method属性->直接属性值写execute中的要执行的方法名称(注意:只是方法名称)			
+
+		第二种 使用通配符方式实现(**重*点**)
+			在action标签里面name属性，name属性值里面写 符号 *  星号
+				（1）* 理解： 表示匹配任意内容
+				- 比如访问hello，* 可以匹配到
+				- 比如访问add，* 可以匹配到
+				例子:<action name="book_*" class="cn.itcast.method.BookAction" method="{1}">//"{1}"代表获取第一个*号的值
+				（2）看文件夹外的图解说明
+
+		第三种 动态访问实现（不用）
+
+
+	错误知识点:
+		（1）如果action方法有返回值，在配置文件中没有配置，会出现错误
+		（2）在action里面的方法有返回值，如果有返回值时候类型必须是String
+		（3）action里面的方法可以没有返回值，没有返回值时候，在result标签不需要配置
+			-> 把方法写成void
+			-> 让返回值，返回 ”none”
+
+
+********************************************************************************************************************************************************************************************
+
+2018/8/5 11:11
+
+	全局结果页面配置:
+		应用场景:一个包中好多个action返回值都是指向同一个页面,可以直接全局页面配置文件中配置
+		配置:
+			<package name="demo1" extends="struts-default" namespace="/">
+				<!-- 全局结果页面配置 -->
+				<!-- book和orders的action返回值success都指向一个hello.jsp页面>
+				<global-results>
+					<result name="success">/hello.jsp</result>
+				</global-results>
+		
+				<action name="book" class="cn.itcast.action.BookAction">
+				</action>
+				<action name="orders" class="cn.itcast.action.OrdersAction">
+				</action>
+			</package>
+			
+
+	局部结果页面配置:
+		应用场景:配置文件中action标签内自己配置result标签,自己跳转页面时
+		配置:
+			<package name="demo1" extends="struts-default" namespace="/">
+				<action name="orders" class="cn.itcast.action.OrdersAction">
+					<result name="success">/hello.jsp</result>
+				</action>
+			</package>
+
+********************************************************************************************************************************************************************************************
+
+	action获取表单提交数据三种方式
+		一.使用ActionContext类
+			*这个类不是new,可以通过静态方法获取
+				->static ActionContext getContext()-----获取当前线程的ActionContext对象
+				->Map<String,Object> getParameters()----返回一个包含所有HttpServletRequest参数信
+			代码:
+				//1 获取ActionContext对象
+				ActionContext context = ActionContext.getContext();
+				//2 调用方法得到表单数据
+				//Key是表单输入项name属性值,value是输入的实际值
+				Map<String,Object> map = context.getParameters();
+				//3 遍历map
+				Set<String> keys = map.keySets();
+				for(String key:keys){
+					//根据key得到value
+					Object[] obj = (Object[])map.get(key);
+					//数组形式:因为输入项里面可能有复选框情况
+					sysout(Arrays.toString(obj));					
+				}
+				
+
+		二.使用ServletActionContext类
+			这个类中方法特别多,完美对应之前的Servlet阶段域对象
+				->static HttpServletRequest getRequest()---获取web应用中的request对象---------->通过request获取session,,直接:request.getSession();
+				->static HttpServletResponse getResponse()---获取web应用中的response对象
+				->static ServletContext getServletContext()--获取web应用中的ServletContext对象
+				->static PageContext getPageContext()---获取web应用中的PageContext对象
+				
+			代码一:
+				//1 使用ServletActionContext获取request对象
+				HttpServletRequest request = ServletActionContext.getRequest();
+				//2 调用request里面的方法得到结果
+				String username = request.getParameter("username");
+				String password = request.getParameter("password");
+				String address = request.getParameter("address");
+		
+				System.out.println(username+":"+password+":"+address);
+			
+			代码二:
+				//操作三个域对象
+				//1 request域
+				HttpServletRequest request = ServletActionContext.getRequest();
+				request.setAttribute("req", "reqValue");
+		
+				//2 session域
+				HttpSession session = request.getSession();
+				session.setAttribute("sess", "sessValue");
+		
+				//3 ServletContext域
+				ServletContext context = ServletActionContext.getServletContext();
+				context.setAttribute("contextname", "contextValue");
+			
+		三.使用接口注入方式---实现ServletRequestAware接口
+			代码:
+				@Override
+				public void setServletRequest(HttpServletRequest request) {
+					this.request = request;
+				}
+				public String execute() throws Exception {
+					request.getParameter("");//可以获取表单数据
+					return NONE;
+				}	
+			
+********************************************************************************************************************************************************************************************
+
+	struts提供获取表单数据方式(数据只是封装到实体类,不会到数据库,可以使用hibernate封装到数据库)
+
+		方式一:属性封装(不可以直接封装到实体类,可以理解为从页面获取过来)
+			1 直接把表单提交属性封装到action的属性里面
+			2 实现步骤
+			（1）在action成员变量位置定义变量
+				- 变量名称和表单输入项的name属性值一样(jsp页面表单)
+			（2）生成变量的set方法（把set和get方法都可以写出来,但是不会用到get方法）
+			3 使用属性封装获取表单数据到属性里面，不能把数据直接封装到实体类对象里面
+				-所以要想封装到数据库,还得创建实体类对象,调用set()方法
+
+		方式二:模型驱动封装(**重点**)
+			代码:
+			//实现ModelDriven接口,泛型是要封装的对象
+			public class DataDemo2Action extends ActionSupport implements ModelDriven<User>{
+
+				//创建对象
+				//前提要求： 表单输入项name属性值 和 实体类属性名称一样
+				//实现getModel()方法,return回要封装的对象
+				private User user = new User();
+				public User getModel() {
+					//返回创建user对象
+					return user;
+				}   
+
+				@Override
+				public String execute() throws Exception {
+					System.out.println(user);
+					return NONE;
+				}
+			}
+
+
+			
+		方式三:表达式封装(表达式封装可以把表单属性值封装到不同的实体类里面,只需要表单输入项中属相表达式写法改变就可以)
+			1 使用表达式封装可以把表单数据封装到实体类对象里面
+				(1)在action里面申明实体类
+				(2)生成实体类变量的set和get方法
+					//1 声明实体类
+					private User user;
+					//2 生成实体类变量的set和get方法
+					public User getUser() {
+						return user;
+					}
+					public void setUser(User user) {
+						this.user = user;
+					}
+				(3)在表单输入项的name属性值里面写表达式形式
+					<form action="${pageContext.request.contextPath }/data3.action" method="post">
+						username:<input type="text" name="user.username"/>
+						<br/>
+						password:<input type="text" name="user.password"/>
+						<br/>
+						address:<input type="text" name="user.address"/>
+						<br/>
+						bname: <input type="text" name="book.bname"/>
+						<br/>
+						<input type="submit" value="提交"/>
+					</form>
+
+********************************************************************************************************************************************************************************************
+
+	把表单数据封装到一个List集合/Map集合中
+		1 封装数据到List集合
+			第一步 在action声明List
+			第二步 生成list变量的set和get方法
+				// 1 声明List变量
+				private List<User> list;
+				// 2 生成get和set方法
+				public List<User> getList() {
+					return list;
+				}
+				public void setList(List<User> list) {
+					this.list = list;
+				}
+			第三步 在表单输入项里面写表达式
+				<form action="${pageContext.request.contextPath }/list.action" method="post">
+					<!-- list[0] : 表示list集合中第一个user对象 -->
+					username:<input type="text" name="list[0].username"/>
+					<br/>
+					password:<input type="text" name="list[0].password"/>
+					<br/>
+					address:<input type="text" name="list[0].address"/>
+		
+					<br/><br/>
+		
+					username:<input type="text" name="list[1].username"/>
+					<br/>
+					password:<input type="text" name="list[1].password"/>
+					<br/>
+					address:<input type="text" name="list[1].address"/>
+					<br/>
+					<input type="submit" value="提交"/>
+				</form>
+	
+		2 封装数据到Map集合
+			第一步 声明map集合
+			第二步 生成get和set方法
+				// 1 声明map集合
+				private Map<String,User> map;
+				public Map<String, User> getMap() {
+					return map;
+				}
+				public void setMap(Map<String, User> map) {
+					this.map = map;
+				}
+			第三步 在表单输入项的name属性值里面写表达式
+				<form action="${pageContext.request.contextPath }/map.action" method="post">
+					<!-- 设置key值 map['key值']
+						设置value值
+					 -->
+					username:<input type="text" name="map['one'].username"/>
+					<br/>
+					password:<input type="text" name="map['one'].password"/>
+					<br/>
+					address:<input type="text" name="map['one'].address"/>
+		
+					<br/><br/>
+		
+					username:<input type="text" name="map['abcd'].username"/>
+					<br/>
+					password:<input type="text" name="map['abcd'].password"/>
+					<br/>
+					address:<input type="text" name="map['abcd'].address"/>
+					<br/>
+					<input type="submit" value="提交"/>
+				</form>
+
+********************************************************************************************************************************************************************************************
+
+2018/8/13 14:07
+	
+	OGNL概述:
+		1 之前web阶段，学习过EL表达式，EL表达式在jsp中获取域对象里面的值
+
+		2 OGNL是一种表达式，这个表达式功能更加强大，
+			（1）在struts2里面操作值栈数据
+			（2）一般把ognl在struts2操作：和struts2标签一起使用操作值栈
+
+		3 OGNL不是struts2的一部分，单独的项目，只是经常和struts2一起使用
+			（1）使用ognl时候首先导入jar包，struts2提供jar包
+		
+		4 使用步骤
+			例子:
+				使用struts2标签
+					(1)使用struts2标签的时候,在jsp中引入标签库
+					<% taglib uri="/struts-tags" prefix="s" %>
+					(2)使用struts标签实现操作
+					//计算haha字符串的长度
+					//value的属性值:ognl表达式
+					<s:property value="'haha'.length()"/>
+
+
+	值栈:
+		1 之前在web阶段，在servlet里面进行操作，把数据放到域对象里面，在页面中使用el表达式获取到，域对象在一定范围内，存值和取值
+
+		2 在struts2里面提供本身一种存储机制，类似于域对象，是值栈，可以存值和取值
+		（1）在action里面把数据放到值栈里面，在页面中获取到值栈数据
+
+		3 servlet和action区别
+		（1）Servlet：默认在第一次访问时候创建，创建一次，单实例对象
+		（2）Action：访问时候创建，每次访问action时候，都会创建action对象，创建多次，多实例对象
+
+		4 值栈存储位置
+		（1）每次访问action时候，都会创建action对象，
+		（2）在每个action对象里面都会有一个值栈对象（只有一个）
+
+		
+		一.获取值栈对象
+			(1)常用方式:使用ActionContext类里面的方法得到值栈对象
+			//1 获取ActionContext类的对象
+			ActionContext context = ActionContext.get.Context();
+			//2 调用方法得到值栈对象
+			ValueStack stack = context.getValueStack();
+			//一个action中只有一个值栈对象,同时获取两个值栈对象比较它们地址结果是true
+		
+		二.值栈内部结构
+			1.值栈分为两部分
+				->root:list集合(我们使用一般操作这个结构)
+				->context:map集合
+
+			2 struts2里面标签 s:debug，使用这个标签可以查看值栈结构和存储值
+			（1）访问action，执行action的方法有返回值，配置返回值到jsp页面中，在jsp页面中使用这个标签
+			（2）在action没有做任何操作，栈顶元素是 action引用
+				- action对象里面有值栈对象
+				- 值栈对象里面有action引用
+
+		三.向值栈放数据
+			方式一:
+				//2 调用方法set方法
+				stack.set("itcast", "itcastitheima");
+			方式二:
+				//3 调用方法push方法
+				stack.push("abcd");
+
+			方式三(**最常用**): 在action定义成员变量，生成变量的get方法,在成员方法里面直接赋值
+				//1 定义变量
+				private String name;
+				2 生成变量的get方法
+				public String getName() {
+					return name;
+				}
+				@Override
+				public String execute() throws Exception {
+					name = "abcdefgh";
+					return "success";
+				}
+		四.向值栈中放对象
+			1 实现步骤
+				第一步 定义对象变量
+				第二步 生成变量的get方法
+				第三步 在执行的方法里面向对象中设置值
+			2 代码
+				//1 定义对象变量
+				private User user = new User();
+				//2 生成get方法
+				public User getUser() {
+					return user;
+				}
+				public String execute() throws Exception {
+				//3 向值栈的user里面放数据
+					user.setUsername("lucy");
+					user.setPassword("123");
+					user.setAddress("美国");
+		
+					return "success";
+				}
+		
+		五.向值栈中放list集合
+			1 实现步骤
+				第一步 定义list集合变量
+				第二步 生成变量的get方法
+				第三步 在执行的方法里面向list集合设置值
+			2 代码
+				// 1 定义list变量
+				private List<User> list = new ArrayList<User>();
+				// 2 get方法
+				public List<User> getList() {
+					return list;
+				}
+	
+				public String execute() throws Exception {
+					//3 向list中设置值
+					User user1 = new User();
+					user1.setUsername("小奥");
+					user1.setPassword("123");
+					user1.setAddress("美国");
+		
+					User user2 = new User();
+					user2.setUsername("小王");
+					user2.setPassword("250");
+					user2.setAddress("越南");
+		
+					list.add(user1);
+					list.add(user2);
+		
+					return "success";
+				}
+		
+		六.获取值栈字符串
+			<s:property value="username"/>
+
+		七.获取值栈对象
+			<s:property value="user.username"/>
+			<s:property value="user.password"/>
+			<s:property value="user.address"/>
+
+		八.获取值栈list集合
+			第一种方式：
+				<!-- 3 获取值栈list集合数据 -->
+				<!-- 第一种方式实现  -->
+				<s:property value="list[0].username"/>
+				<s:property value="list[0].password"/>
+				<s:property value="list[0].address"/>
+				<br/>
+				<s:property value="list[1].username"/>
+				<s:property value="list[1].password"/>
+				<s:property value="list[1].address"/>
+			第二种方式：
+				<!-- 使用struts2标签 类似jstl的foreach标签
+					s:iterator：遍历值栈的list集合
+				 -->
+				 <s:iterator value="list">
+	 				<!-- 遍历list得到list里面每个user对象 -->
+	 				<s:property value="username"/>
+	 				<s:property value="password"/>
+	 				<s:property value="address"/>
+	 				<br/>
+				 </s:iterator>
+			第三种方式：
+				<s:iterator value="list" var="user">
+				<!-- 
+					遍历值栈list集合，得到每个user对象
+					机制： 	把每次遍历出来的user对象放到context临时空间里面
+						获取context里面数据特点：写ognl表达式，
+						使用特殊符号 #(区别是取值栈里边的数据)
+		 		-->
+					<s:property value="#user.username"/>
+					<s:property value="#user.password"/>
+					<s:property value="#user.address"/>
+					<br/>
+				</s:iterator>
+
+		九.其他操作
+			(1) 获取 set向值栈放数据 的值
+				<s:property value="itcast"/>
+
+			(2) 获取 push向值栈放数据 的值
+				1 使用push方法设置值，没有名称，只有设置的值
+				2 向值栈放数据，把向值栈放数据存到数组里面，数组名称 top，根据数组获取值
+				<s:property value="[0].top"/>
+
+********************************************************************************************************************************************************************************************
+	 
+2018/8/14 16:00
+	interceptor	拦截器
+
+	拦截器位置-->struts2-core-2.3.24.jar-->struts-default.xml
+	
+	拦截器执行时间-->在action创建之后,action的方法执行之前
+
+	aop思想:扩展功能不修改源代码,通过配置文件
+
+	过滤链:一个行为需要经过多个过滤器,需要过滤器的不断放行才能到下一个过滤器
+	责任链模式:要执行多个操作，有添加、修改、删除三个操作。
+		   首先执行添加操作，添加操作执行之后 做类似于放行操作，执行修改操作，
+		   修改操作执行之后做类似于放行操作，执行删除操作
+
+	重要的概念:
+	1 过滤器和拦截器区别
+	（1）过滤器：过滤器理论上可以任意内容，比如html、jsp、servlet、图片路径
+	（2）拦截器：拦截器只可以拦截action
+
+	2 Servlet和action区别
+	（1）servlet默认第一次访问时候创建，创建一次，单实例对象
+	（2）action每次访问时候创建，创建多次，多实例对象
+
+********************************************************************************************************************************************************************************************
+
+	自定义拦截器
+
+		1 struts2自带拦截器功能 结构
+			ModelDrivenInterceptor 继承 AbstractInterceptor 类
+			AbstractInterceptor 实现 Interceptor 接口
+			Interceptor接口方法:
+				init();初始化操作
+				destroy();销毁
+				intercept(ActionInvoaction invocation);拦截逻辑的操作
+			
+
+		2 自定义拦截器使用另一种方法
+			-写类 继承MethodFilterInterceptor类
+			-让action里面的某个方法不进行拦截
+			-让拦截器和action有关系:通过配置文件实现(aop思想)
+
+		
+		3 实例--登录拦截器(自定义)
+
+			(1)实现登录的基本功能
+				-1 需求：在项目中，有很多的action的超链接，实现只有是登录的状态，才可以点击action的超链接实现功能，如果不是登录状态，点击action超链接返回到登录页面
+
+				-2 登录的状态：使用session域对象实现
+				（1）登录成功之后，把数据放到session里面
+				（2）判断session是否有值，可以知道是否是登录状态
+				
+				-3代码
+					//登录的方法(在action类里面)
+					public String login() {
+						//1 得到request对象
+						HttpServletRequest request = ServletActionContext.getRequest();
+						String username = request.getParameter("username");
+						String password = request.getParameter("password");
+						//2 作业：查询数据库判断用户名和密码是否正确
+						// 用户名 admin  密码 250
+						if("admin".equals(username) && "250".equals(password)) {
+							//成功
+							//向session里面放值
+							request.getSession().setAttribute("username", username);
+							return "loginsuccess";
+						} else {
+							//失败
+							return "login";
+						}
+					}
+
+			(2)添加拦截器功能
+				（1）判断是否登录：判断session里面是否有名称是username的值
+				（2）拦截器实现过程
+					第一步 创建类，继承MethodFilterInterceptor类
+					第二步 重写MethodFilterInterceptor类里面的方法写拦截器逻辑
+					
+						--代码
+						public class LoginInterceptor extends MethodFilterInterceptor {
+							//这个方法里面写拦截器逻辑
+							protected String doIntercept(ActionInvocation invocation) throws Exception {
+								// 判断session里面是否有名称是username的值
+								// 得到session
+								HttpServletRequest request = ServletActionContext.getRequest();
+								Object obj = request.getSession().getAttribute("username");
+								//判断
+								if(obj != null) {
+									//登录状态
+									//做类似于放行操作，执行action的方法
+									return invocation.invoke();
+								} else {
+									//不是登录状态
+									//不到登录，不执行action的方法，返回登录页面
+									//到result标签里面找到名称是login的值，到配置路径里面
+									return "login";
+								}
+							}
+						}
+					
+					第三步 配置action和拦截器关系（注册拦截器）
+						（1）在要拦截的action标签所在的package标签里面声明拦截器
+							<!-- 1 声明拦截器 -->
+							<interceptors>
+								<interceptor name="loginintercept" class="cn.itcast.interceptor.LoginInterceptor"></interceptor>
+							</interceptors>
+
+						（2）在具体的action标签里面使用声明的拦截器
+							<!-- 2 使用自定义拦截器 拦截action里面的所有方法 要想不拦截所有方法看下一步配置-->
+							<interceptor-ref name="loginintercept"></interceptor-ref>
+							
+						（3）struts2里面执行很多的默认拦截器，但是如果在action里面配置自定义拦截器，
+							问题：默认的拦截器不会执行了 
+							解决：把默认拦截器手动使用一次
+							<!-- 3 把默认拦截器手动使用一次 -->
+							<interceptor-ref name="defaultStack"></interceptor-ref>
+
+
+					第四步 配置拦截器，对action里面所有的方法都进行拦截
+						（1）在action里面有login的登录的方法，这个方法不需要拦截，如果这个方法都拦截，问题是，永远登录不进去了
+
+						（2）解决：让action里面的login方法不进行拦截
+							- 直接通过配置方式让action里面某些方法不进行拦截
+							<!-- 2 使用自定义拦截器 -->
+							<interceptor-ref name="loginintercept">
+								<!-- 配置action里面某些方法不进行拦截
+									name属性值： excludeMethods
+									值：action不拦截的方法名称,多个方法逗号隔开
+								 -->
+								<param name="excludeMethods">login</param>
+							</interceptor-ref>
+			
+********************************************************************************************************************************************************************************************
+
+	struts标签库
+		struts2标签使用jsp页面中
+			1 s:property： 和ognl表达式在jsp页面中获取值栈数据
+			2 s:iterator: 获取值栈list集合数据，表示list集合
+			3 s:debug: 查看值栈结构和数据
+
+		Struts2表单标签（会用）
+			1 html表单标签
+			（1）form : action、method、enctype
+			（2）输入项
+				- 大部分在input里面封装 type=”值”
+				- text：普通输入项
+				- password：密码输入项
+				- radio：单选输入项
+				- checkbox：复选输入项
+				- file：文件上传项
+				- hidden：隐藏项
+				- button：普通按钮
+				- submit：提交按钮
+				- image：图片提交
+				- reset：重置
+				- select：下拉输入项
+				- textarea：文本域
+			2 在struts2里面对应html表单标签大部分都有
+				<!-- form标签 -->
+					<s:form>
+						<!-- 1 普通输入项 -->
+						<s:textfield name="username" label="username"></s:textfield>
+		
+						<!-- 2 密码输入项 -->
+						<s:password name="password" label="password"></s:password>
+		
+						<!-- 3 单选输入项 -->
+						<!-- value属性值和显示值一样的 -->
+						<s:radio list="{'女','男'}" name="sex" label="性别"></s:radio>
+		
+						<!-- value属性值和显示值不一样的 -->
+						<s:radio list="#{'nv':'女','nan':'男'}" name="sex1" label="性别"></s:radio>
+		
+						<!-- 4 复选输入项 -->
+						<s:checkboxlist list="{'吃饭','睡觉','敲代码'}" name="love" label="爱好"></s:checkboxlist>
+		
+						<!-- 5 下拉输入框 -->
+						<s:select list="{'幼儿园','博士后','教授'}" name="college" label="学历"></s:select>	
+	
+						<!-- 6 文件上传项 -->
+						<s:file name="file" label="上传文件"></s:file>
+		
+						<!-- 7 隐藏项 -->
+						<s:hidden name="hid" value="abcd"></s:hidden>
+		
+						<!-- 8 文本域 --> 
+						<s:textarea rows="10" cols="3" name="resume" label="简历"></s:textarea>
+		
+						<!-- 9 提交按钮 -->
+						<s:submit value="提交"></s:submit>
+		
+						<!-- 10 重置 -->
+						<s:reset value="重置"></s:reset>
+					</s:form>
+
+
+
+
+	struts2文件上传(没讲,需要后边补笔记)
+
+
+********************************************************************************************************************************************************************************************
+
+2018/8/15 16:05
+
+*************************************************************
+	struts2 总结(使用流程)				    *
+		1 Action				    *
+		（1）action创建（继承ActionSupport类）      *
+		（2）配置访问action的方法（通配符）	    *
+		（3）action获取表单数据			    *
+		- 模型驱动				    *
+		（4）action操作域对象			    *
+		（5）result标签里面type属性 		    *
+							    *
+		2 值栈					    *
+		（1）值栈结构				    *
+		（2）向值栈放数据	    		    *
+		（3）从值栈获取数据			    *
+							    *
+		3 拦截器				    *
+		（1）拦截器原理				    *
+		（2）自定义拦截器			    *
+		- 继承类  				    *
+		- 写拦截器逻辑				    *
+		- 配置拦截器				    *
+		-- 配置让action某些方法不进行拦截	    *
+*************************************************************

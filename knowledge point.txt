@@ -1,0 +1,14 @@
+2018/7/31 18:31
+	申请域名网址(著名)
+		->万网:www.net.cn
+		->新网:www.xinnet.com
+		->西部数码:www.west263.com
+	暂时用的网站:新浪云
+
+2018/8/4 15:06
+	web.xml中没struts配置文件
+		右键->JavaEE->generate
+
+	
+2018/8/31 14:42
+	eclipse 中 new对象 快捷键补全:Shift+Alt+L

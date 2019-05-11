@@ -1,0 +1,37 @@
+2018/9/5 12:57
+	虚拟机网络连接错误:
+		弹出界面eth0：错误：激活连接失败：Device not managed by NetworkManager or unavailable
+	解决办法:
+		原因：windows中没有开启VMware NAT Service和VMnetDHCP服务
+		解决方法：把VMware NAT Service和VMnetDHCP服务打开即可。
+
+2018/9/13 11:30
+	maven工程中pom.xml文件中jsp-api的依赖冲突
+
+	问题:如果使用compile依赖,运行tomcat就会出现空指针异常,如果使用provided就不会出现异常
+	原因:如果使用compile依赖,会把jsp-api.jar包打包到本地工程文件中,这个时候,tomcat中的jap-api就会与这个本地jsp-api冲突,导致异常
+	解决:pom.xml中使用provided依赖
+	
+2018/12/10 21:55
+	maven(war工程)中的pom.xml文件第一行报错
+	
+	解决: cmd去中央仓库中删除.lastUpdated文件,命令是 for /r %i in (*.lastUpdated) do del %i	之后右键工程,maven->update project->勾选 Force Update of Snapshots/Releas
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

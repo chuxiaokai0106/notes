@@ -1,0 +1,252 @@
+2018/9/15 16:41
+	cache		电脑高速缓冲处理器
+	persistence	持续/固执
+	prefix 		前缀
+	man		vt/操纵
+	benchmark	标准检查程序
+	command 	命令
+	arguments	参数
+	member		成员
+	queue 		队列
+	replication	复制
+	
+
+
+
+
+	Nosql概述
+		3V:海量.多样.实时
+		3高:高性能.高并发.高可扩
+
+	文档类数据库
+		MongoDB
+	图片数据库
+		Google的GFS
+		淘宝的TFS
+		Hadoop的HDFS
+	商品关键字
+		ISearch
+	商品的波段性的热点高频信息
+		Tair.Redis.Memcache
+
+2018/9/18 16:20
+	Nosql数据模型简介 
+	
+	Nosql数据库的四大分类
+		KV键值对
+		文档型数据库
+		列存储数据库
+		图关系数据库
+
+	命令
+		redis-server /redis.conf路径		启动
+		redis-cli -p 6379			进去
+		select number		选择某一个数据库(一共16个,角标从0开始)
+		set K V			放值
+		get K			取值
+		shutdown		退出redis的数据库
+		exit			退出redis
+		flushdb			清空redis当前所在数据库
+		flushall		清空redis所有数据库
+		
+***********************************************************************************************************************************************************************************
+
+	redis五大基本数据类型
+		String(字符串)
+			一个K对应一个V
+			二进制安全的
+			一个redis V最多可以是512M
+
+		Hash(哈希,类似java的Map)
+			是一个键值对集合
+			是一个string类型的field和value的映射表,hash特别适合用于存储对象
+			类似于java里面的Map<Strng,Object>		
+
+		List(列表)
+			链表类型,数据随便插入
+					
+		Set(集合)
+			String类型的无序集合,无序无重复,通过HashTable实现的
+
+		Zset(sorted set:有序集合)
+			zset和set一样是string类型元素的集合,且不允许重复的成员.
+			不同的是每个元素都会关联一个double类型的分数
+			redis正是通过分数类为集合中的成员进行从小到大的排序.zset的成员是唯一的,但分数(score)却可以重复.
+
+	
+	Key
+		keys *			查看所有K
+		exit K(名字)		判断某个K是否存在
+		move K db		当前库就没有了,被移除
+		expire  K 秒数		为给定的K设置过期时间
+		ttl K			查看还有多少秒过期:-1表示永不过期;-2表示已经过期
+		type K 			查看你的K类型
+		del K			删除K
+		set K V			设置K(再次设置已有值得K,V会被覆盖)
+		get K			获取K值
+	
+	String
+		set/get/del/append/strlen			设置/获取/删除/追加/长度
+		incr/decr/incrby/decrby(数字的增加减少)		增加1/减少1/增加数字n/减少数字n(by后面空格+数字)
+		getrange/setrange				获取指定K的范围内的值/设置指定K的范围内的值
+				->例子:get K1 0 5->获取K1对应的V的0到5索引一共6位
+				       set K1 0 V->设置K1的0索引开始,用V替代
+		setex(set with expire)/setnx(set if not exist)	设置K和V并且设置过期时间(时间写在K后面)/不存在就设置,存在就不设置
+		mset(more set)/mget/msetnx			设置多个值:mset K1 V1 K2 V2 .../获取多个/若存在设置多个																
+		getset						先get再set
+
+	List(K就是List,一个K对应多个V)
+		lpush/rpush/lrange				左边先放/右边先放/通过范围查询list值
+				->例子:lrange list1 0 -1	查询list1所有值
+				       lpush list2 1 2 3 4 5	依次放进list2里12345
+		lpop/rpop					拿出集合顶部第一个/拿出底部第一个(拿出之后list就没了)
+				->例子:lpop list1  
+		lindex						按照索引下表获取元素
+				->例子:lindex list1 0
+		lrem List n V					删除List的表的n个V值
+		ltrim K 开始的index 结束的index			截取指定范围的值后再复制给K(自己截取自己一部分赋值给自己)
+		rpoplpush 源列表 目的列表			移除列表底部的最后一个元素，并将该元素添加到另一个列表顶部第一个元素并返回该元素
+		lset K index V					设置V到K的index位置,index后面的元素向后移一位
+		linsert K before/after 值1 值2 			在list某个已有值的前后再添加具体值		
+					
+	Set
+		sadd/smembers/sismember				添加元素到set集合/查询set集合中所有元素/查询某一个元素是否存在
+				->例子:sadd set1 1 2 3
+				       smembers set1 
+				       sismembers set1 V
+		scard						后去集合里面有多少个元素
+		srem K V					删除集合中元素
+		srandmenber K n					随机出几个K中的n个数字
+		spop K						随机出栈,一次一个
+		smove K1 K2 K1里面的某个值			把K1里面的某个值赋值到K2里面
+		
+		数学集合类					找两个集合的有关系的值(差.交.并)
+			差集:sdiff				不同的罗列出来
+			交集:sinter				相同的罗列出来
+			并集:sunion				所有不同的都罗列出来
+			
+	Hash(哈希)
+		KV模式不变,但是V是一个键值对
+
+		hset/hget/hmset/hmget/hgetall/hdel		添加/获取/添加多个/获取多个,后面跟具体自己指定的值/获取所有值(不需要自己指定值)/删除指定的K
+				->hset user name zhangsan	
+				  hget user name
+				  hmset customer id 33 name li4 Oder 23 
+				  hmget customer id name Oder
+				  hgetall customer
+				  hdel customer name
+		
+		hlen						长度
+		hexists K 在K里面的某个值得key			查询key是否存在于K中
+		hkeys/hvals					查询所有key/查询所有value
+		hincrby/hincrbyfloat				增加值/增加小数值
+		hsetnx						不存在就写进Hash里面,存在就不写
+		
+	Zset
+		概念:在set基础上,加一个score值.
+		     之前set是K1 v1 v2 v3
+		     现在zset是K1 score1 v1 score v2
+
+		zadd/zrange
+		zrangebyscore K 开始score 结束score
+		zrem K 某score下对应的value值,作用是删除元素
+		zcard/zcount K score区间/zrank K values值,作用是获得下标值/zscore K 对应值,后的分数
+		zrevrank K values值,作用是逆序获得下标值
+		zrevrange
+		zrevrangebyscore K 结束score 开始score
+
+***********************************************************************************************************************************************************************************
+
+	Redis配置文件解析
+
+	持久化(备份)
+		rdb(redis databases):时间段内将内存中的数据集快照写入磁盘,也就是snapshot快照,它恢复时是将快照文件直接读到内存中.
+		    		     RDB方式对于大规模数据的恢复比AOF要高效
+		    		     RDB缺点是最后一次持久化后的数据可能会丢失
+		aof(appond only file):以日志形式记录每个写操作,将redis执行过程的所有指记录下来(读操作过程不记录),只许追加文件不可以改写文件,
+		   		     redis重启之后,会读取重新构建数据,也就是会读aof文件,文件里边语句挨个执行一遍以恢复数据
+			
+	事务
+		multi		开启事务
+		exec		执行事务
+		discard		放弃事务
+		
+	主从复制
+		特点:读写分离,master写,slave读
+		
+
+	Java-Jedis(redis代码API实例)
+		5+1数据类型
+		事务
+		主从复制
+		Jedispool
+
+
+***********************************************************************************************************************************************************************************
+完结**2018.10.09.22:16
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	

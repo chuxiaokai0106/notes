@@ -1,0 +1,436 @@
+2018/8/23 9:00
+	plugin	插件
+	parse 	解析
+
+ 
+	回顾SSH框架知识点:
+	
+		Hibernate框架
+			1 hibernate核心配置文件
+				（0）orm思想
+					- 对象关系映射
+				（1）数据库信息
+				（2）hibernate信息
+				（3）映射配置
+				（4）hibernate核心配置文件
+					- 如果单纯使用hibernate框架，核心配置文件名称 hibernate.cfg.xml和位置 src下面 固定的
+					- hibernate和spring整合时候，hibernate核心配置文件名称和位置没有固定要求的
+			2 hibernate映射配置文件
+				（1）实体类和数据库表映射关系—使用orm思想
+			3 hibernate操作的步骤
+				（1）在spring框架对hibernate框架进行封装，使用hibernateTemplate
+
+
+
+		Struts2框架
+			1 Action操作
+				（1）action创建三种方式
+					- 继承类 ActionSupport
+				（2）配置action访问路径
+					- 创建struts.xml配置文件，这个文件名称和位置固定 src下面的
+				（3）配置访问action的多个方法
+					- 使用通配符方式配置
+				（4）在action获取表单提交数据
+					- 获取request对象
+						** 使用ServletActionContext类获取
+					- 属性封装
+					- 模型驱动（重点）
+					- 表达式封装
+				（5）在action操作域对象
+					- 使用ServletActionContext获取域对象
+				（6）配置struts2的过滤器
+			2 值栈
+				（1）向值栈放数据
+					- set方法
+					- push方法
+					- 定义变量，生成get方法
+				（2）从值栈获取数据
+					- 在jsp中使用struts2标签+ognl获取
+					- <s:property>
+					- <s:iterator>
+			3 拦截器
+				（1）aop和责任链模式
+				（2）自定义拦截器
+					- 继承MethodFilterInterceptor
+					- 重写类里面的方法
+					- 配置拦截器和action关联
+
+
+
+		Spring框架
+			1 spring核心配置文件
+				（1）名称和位置没有固定要求
+				（2）在spring核心配置文件中引入schema约束
+			2 创建对象
+				（1）xml配置方式：<bean  id=””  class=””  scope=””/>
+				（2）注解方式：四个注解
+			3 注入属性(对象类型属性)
+				（1）xml配置方式：
+				（2）注解方式：两个注解
+					- autowired
+					- resource
+			4 使用ServletContext对象和监听器实现
+				（1）在服务器启动时候，加载spring配置文件，创建对象
+				（2）配置spring的监听器
+				（3）指定spring配置文件位置
+			5 jdbcTemplate
+			6 spring事务配置
+				（1）xml方式
+				（2）注解方式
+
+
+
+
+
+
+
+
+	spring整合struts
+
+		1 目的:把struts2的action交给spring管理
+
+		2 实现过程
+			第一步 导入struts2的jar包
+				（1）导入用于整合的jar包
+					struts2-spring-plugin.jar
+				（2）导入struts2的基础jar包
+			第二步 创建action
+				public class UserAction extends ActionSupport {
+					@Override
+					public String execute() throws Exception {
+						System.out.println("action.............");
+						userService.add();
+						return NONE;
+					}
+				}
+			第三步 创建struts2核心配置文件，配置action
+				（1）位置在src下面，名称是struts.xml
+					<struts>
+						<package name="demo1" extends="struts-default" namespace="/">
+							<!-- class属性里面不写action全路径了，因为写，action对象创建两次
+								写spring配置的action的bean的id值
+							 -->
+							<action name="userAction" class="userAction"></action>
+						</package>
+					</struts>
+			第四步 配置struts2过滤器
+				<filter>
+      					<filter-name>struts2</filter-name>
+       					<filter-class>org.apache.struts2.dispatcher.ng.filter.StrutsPrepareAndExecuteFilter</filter-class>
+   				</filter>
+    				<filter-mapping>
+       					<filter-name>struts2</filter-name>
+        				<url-pattern>/*</url-pattern>
+    				</filter-mapping>
+			第五步 导入spring的jar包
+				（1）基础jar包
+			第六步 创建spring配置文件
+				（1）引入约束
+					<!-- 配置action的对象 -->
+					<!-- 注意:action是多实例对象
+						  所以需要配置属性值:scope="prototype"
+					 -->
+					<bean id="userAction" class="cn.itcast.action.UserAction" scope="prototype"></bean>
+				（2）配置spring监听器
+					<listener>
+    						<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    					</listener>
+				（3）指定spring配置文件位置
+					<context-param>
+  						<param-name>contextConfigLocation</param-name>
+  						<param-value>classpath:bean1.xml</param-value>
+  					</context-param>
+			第七步 把action交给spring进行配置（***）
+				（1）问题:
+					在spring配置action对象，在struts.xml中也配置action对象
+					类路径一样,会加载创建两次action对象
+				（2）解决：
+					只需要在spring里面配置action对象，不要在struts.xml中配置
+						也就是 第三步 中的action标签中的class属性的配置,属性值应该写spring配置文件中bean标签中的id属性值
+
+
+
+
+
+	spring整合hibernate
+
+		目的:
+			1 把hibernate核心配置文件中配置数据库信息，把数据库信息在spring进行配置
+			2 把hibernate里面的sessionFactory创建交给spring管理
+
+		实现:
+			第一步 导入hibernate的jar包
+				 1 导入struts2和hibernate的jar包时候有jar冲突问题
+					在struts2里面有jar包
+						javassist-3.11.0.GA.jar
+					在hibernate里面有jar包
+						javassist-3.18.1-GA.jar
+					删除低版本的jar包
+				 2 导入spring整合持久化层框架需要导入jar包
+					spring-orm.jar
+				 3 注意:
+					可以直接导入老师整理好的ssh整合的所有jar包
+
+			第二步 搭建hibernate环境
+				1 创建实体类
+					实体类(成员变量:id等等,成员变量setget方法)
+				2 配置实体类映射关系
+					实体类名字.hbm.xml
+				3 创建核心配置文件
+					hibernate.cfg.xml
+					这个配置文件中不要配置数据库连接信息,数据库连接在spring配置文件中配置
+				
+			第三步 把hibernate核心配置文件数据库配置，在spring进行配置
+				<!-- 配置c3p0连接池 -->
+				<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+					<!-- 注入属性值 -->
+					<property name="driverClass" value="com.mysql.jdbc.Driver"></property>
+					<property name="jdbcUrl" value="jdbc:mysql:///spring_day04"></property>
+					<property name="user" value="root"></property>
+					<property name="password" value="root"></property>
+				</bean>
+
+			第四步 把hibernate的sessionFactory交给spring配置
+				 1 服务器启动时候，加载spring配置文件，把配置文件中对象创建
+				 2 把sessionFactory对象创建在spring配置
+				 3 因为创建sessionFactory代码不是new出来的，而是多行代码实现的
+					// 加载核心配置文件
+					cfg = new Configuration();
+					cfg.configure();
+					// 创建sessionFactory
+					sessionFactory = cfg.buildSessionFactory();
+				 4 spring里面针对上面情况，封装类，配置类对象可以创建sessionFactory
+
+					<!-- sessionFactory创建交给spring管理 -->
+					<bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+						<!-- 因为在hibernate核心配置文件中，没有数据库配置，数据库配置在spring里面配置，注入dataSource -->
+						<property name="dataSource" ref="dataSource"></property>
+		
+						<!-- 指定使用hibernate核心配置文件:交互位置关系建立 -->
+						<property name="configLocations" value="classpath:hibernate.cfg.xml"></property>
+					</bean>
+
+			第五步 在dao里面使用hibernateTemplate
+				项目结构:
+					cn.itcast.dao包:UserDao接口、UserDaoImpl类
+					cn.itcast.action包:UserAction类
+					cn.itcast.entity包:User类、User.hbm.xml
+					cn.itcast.service包:UserService类
+					hibernate.cfg.xml
+					struts.xml
+					bean.xml(spring配置文件)
+					log4j.properties
+
+				**关于service层中配置dao层中的问题(dao层是实体类实现接口)**				
+					service中代码:
+						//注入dao对象
+						private UserDao userDao;
+						public void setUserDao(UserDao userDao) {
+							this.userDao = userDao;
+						}
+					spring配置:
+						<!-- 创建service对象 -->
+						<bean id="userService" class="cn.itcast.service.UserService">
+							<!-- 注入dao 
+								接口 = 实现类对象
+							-->
+							<property name="userDao" ref="userDaoImpl"></property>
+						</bean>
+	
+						<!-- 创建实现类对象 -->
+						<bean id="userDaoImpl" class="cn.itcast.dao.UserDaoImpl">
+							<property name="hibernateTemplate" ref="hibernateTemplate"></property>
+						</bean>
+					
+
+				1 在dao得到hibernateTemplate的对象
+				    Dao代码:
+					//得到hibernateTemplate对象
+					private HibernateTemplate hibernateTemplate;
+					public void setHibernateTemplate(HibernateTemplate hibernateTemplate) {
+						this.hibernateTemplate = hibernateTemplate;
+					}
+				    spring配置:
+					<!-- 创建实现类对象 -->
+					<bean id="userDaoImpl" class="cn.itcast.dao.UserDaoImpl">
+						<property name="hibernateTemplate" ref="hibernateTemplate"></property>
+					</bean>
+	
+					<!-- 创建hibernateTemplate对象 -->
+					<bean id="hibernateTemplate" class="org.springframework.orm.hibernate5.HibernateTemplate">
+						<!-- 注入sessionFactory -->
+						<property name="sessionFactory" ref="sessionFactory"></property>
+					</bean>
+
+				2 调用hibernate模板里面save方法添加
+					UserDaoImpl类中的add()中:
+						User user = new User();
+						user.setUsername("rose");
+						user.setAddress("japan");
+		
+						//调用save方法实现添加
+						hibernateTemplate.save(user);
+					注意:因为没有为hibernateTemplate配置事务,所以执行会报错,操作完成不了
+						commit/auto or remove "reayonly" marker from transaction ...
+
+			第六步 配置事务管理器
+				spring的xml配置:
+					<!-- 第一步 配置事务管理器 -->
+					<bean id="transactionManager" class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+						<!--注入sessionFactory-->
+						<!-- 因为sessionFactory中包含了dataSource,所以注入sessionFactory -->
+						<property name="sessionFactory" ref="sessionFactory"></property>
+					</bean>
+	
+					<!-- 第二步 开启事务注解 -->
+					<tx:annotation-driven transaction-manager="transactionManager"/>
+				
+				代码:
+					@Transactional
+					public class UserService { ... }
+
+
+
+
+	HibernateTemplate介绍
+		1 HibernateTemplate对hibernate框架进行封装，
+		  直接调用HibernateTemplate里面的方法实现功能
+
+		2 HibernateTemplate常用的方法
+			Serializable save(Object entity) ：添加操作
+			void update(Object entity) ：修改操作
+			void delete(Object entity) ：删除操作
+			<T> T get(Class<T> entityClass, Serializable id) ：根据id查询
+			<T> T load(Class<T> entityClass, Serializable id)： 根据id查询
+			
+			List find(String queryString, Object... values) ：查询操作的方法
+				// find方法查询所有记录
+				List<User> list = (List<User>) hibernateTemplate.find("from User");
+				for (User user : list) {
+					System.out.println(user.getUsername()+"::"+user.getAddress());
+				}
+				// find方法条件查询
+				// 查询username值lucy
+				List<User> list = (List<User>) hibernateTemplate.find("from User where username=?", "lucy");
+				for (User user : list) {
+					System.out.println(user.getUsername()+"::"+user.getAddress());
+				}
+
+
+	
+
+
+
+	SSH框架整合过程
+		
+		第一步 导入jar包
+		第二步 搭建struts2环境
+			（1）创建action，创建struts.xml配置文件，配置action
+			（2）配置struts2的过滤器
+		第三步 搭建hibernate环境
+			（1）创建实体类
+			（2）配置实体类和数据库表映射关系
+			（3）创建hibernate核心配置文件
+				- 引入映射配置文件
+		第四步 搭建spring环境
+			（1）创建spring核心配置文件
+			（2）让spring配置文件在服务器启动时候加载
+				- 配置监听器
+				- 指定spring配置文件位置
+		第五步 struts2和spring整合
+			（1）把action在spring配置（action多实例的）
+			（2）在struts.xml中action标签class属性里面写 bean的id
+		第六步 spring和hibernate整合
+			（1）把hibernate核心配置文件中数据库配置，在spring里面配置
+			（2）把hibernate的sessionFactory在spring配置
+		第七步 在dao里面使用hibernateTemplate
+			（1）在dao注入hibernateTemplate对象
+			（2）在hibernateTemplate对象中注入sessionFactory
+		第八步 配置事务
+
+
+
+
+
+
+
+	整合其他方式
+		1 spring整合hibernate时候，可以不写hibernate核心配置文件
+			（1）把hibernate核心配置文件中，基本信息配置和映射引入都放到spring配置,不写hibernate核心配置文件
+
+				<!-- sessionFactory创建交给spring管理 -->
+				<bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+					<!-- 因为在hibernate核心配置文件中，没有数据库配置，数据库配置在spring里面配置，注入dataSource -->
+					<property name="dataSource" ref="dataSource"></property>
+		
+					<!-- 配置hibernate基本信息 -->
+					<property name="hibernateProperties">
+						<props>
+							<prop key="hibernate.show_sql">true</prop>
+							<prop key="hibernate.format_sql">true</prop>
+							<prop key="hibernate.hbm2ddl.auto">update</prop>
+							<prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+						</props>
+					</property>
+		
+					<!-- 配置映射文件引入 -->
+					<property name="mappingResources">
+						<list>
+							<value>cn/itcast/entity/User.hbm.xml</value>
+							<!-- <value>....</value> -->
+						</list>
+					</property>
+				</bean>
+
+
+	Spring分模块开发
+		1 在spring里面配置多个内容，造成配置混乱，不利用维护
+		2 把spring核心配置文件中，一部分配置放到单独的配置文件中，在spring核心配置文件中引入单独配置文件
+
+			<!-- 引入其他spring配置文件 -->
+			<import resource="classpath: ...(spring的xml文件路径)">
+
+
+
+
+
+
+	*****需**要**补**充**的**知**识****
+
+		SVN版本控制
+		struts2文件上传
+		jQuery
+		easyUI
+		ajax
+		json
+
+		客户管理系统项目(周期5天)		
+
+	*****需**要**补**充**的**知**识****
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
